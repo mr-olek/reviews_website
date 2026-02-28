@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin{% endblock %} — Verdictly</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-logo">
+      <span>⭐</span>
+      <span>Verdictly<br><small>Admin</small></span>
+    </div>
+    <nav class="admin-nav">
+      <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+        📊 Dashboard
+      </a>
+      <a href="{{ url_for('admin.reviews') }}" class="{% if 'review' in request.endpoint %}active{% endif %}">
+        💬 Reviews
+      </a>
+      <a href="{{ url_for('admin.subjects') }}" class="{% if 'subject' in request.endpoint %}active{% endif %}">
+        🖼 Subject Photos
+      </a>
+      <hr>
+      <a href="{{ url_for('main.index') }}" target="_blank">↗ View Site</a>
+      <form method="POST" action="{{ url_for('admin.logout') }}" style="margin-top:auto">
+        <button type="submit" class="logout-btn">🚪 Logout</button>
+      </form>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <h1 class="admin-page-title">{% block page_title %}{% endblock %}</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="admin-content">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% set breadcrumbs = [
+  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': subject.name, 'url': url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug)},
+  {'label': 'Review', 'url': None}
+] %}
+
+{% block title %}{{ review.title }} - {{ subject.name }} Review - Verdictly{% endblock %}
+
+{% block content %}
+<article class="review-full">
+  <div class="review-full-header">
+    <div class="review-subject-link">
+      <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug) }}">
+        {% if subject.image_path %}
+        <img src="{{ url_for('static', filename=subject.image_path) }}" alt="{{ subject.name }}" class="review-subject-thumb">
+        {% endif %}
+        {{ subject.name }}
+      </a>
+    </div>
+
+    <h1 class="review-full-title">{{ review.title }}</h1>
+
+    <div class="review-full-meta">
+      <div class="review-author-info">
+        <div class="review-author-avatar large">{{ review.author_name[0]|upper if review.author_name else 'A' }}</div>
+        <div>
+          <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
+          <div class="review-meta-detail">
+            <span>via {{ review.source_site }}</span>
+            {% if review.original_date %}
+            <span>· {{ review.original_date.strftime('%B %d, %Y') }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="rating-display">
+        <div class="stars-large">
+          {% for i in range(1, 6) %}
+            <span class="star {% if i <= review.rating %}filled{% else %}empty{% endif %}">★</span>
+          {% endfor %}
+        </div>
+        <div class="rating-label">{{ review.rating }} out of 5</div>
+      </div>
+    </div>
+  </div>
+
+  {% if review.image_path %}
+  <div class="review-full-image">
+    <img src="{{ url_for('static', filename=review.image_path) }}" alt="Photo by {{ review.author_name }}">
+  </div>
+  {% endif %}
+
+  <div class="review-full-body">
+    {% for paragraph in review.body.split('\n') %}
+      {% if paragraph.strip() %}
+      <p>{{ paragraph.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="review-full-footer">
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug) }}" class="back-link">
+      ← Back to {{ subject.name }} reviews
+    </a>
+  </div>
+</article>
+{% endblock %}

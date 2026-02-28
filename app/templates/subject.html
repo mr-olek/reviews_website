@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% set breadcrumbs = [
+  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': subject.name, 'url': None}
+] %}
+
+{% block title %}{{ subject.name }} Reviews - Verdictly{% endblock %}
+
+{% block content %}
+<div class="subject-header">
+  <div class="subject-header-image">
+    {% if subject.image_path %}
+    <img src="{{ url_for('static', filename=subject.image_path) }}" alt="{{ subject.name }}" id="subject-main-img">
+    {% else %}
+    <div class="subject-header-placeholder" id="subject-main-img">🐾</div>
+    {% endif %}
+  </div>
+  <div class="subject-header-info">
+    <div class="subcat-label">{{ subject.subcategory.name }}</div>
+    <h1>{{ subject.name }}</h1>
+    {% if subject.review_count > 0 %}
+    <div class="rating-summary">
+      <div class="big-rating">{{ "%.1f"|format(subject.avg_rating) }}</div>
+      <div class="rating-details">
+        <div class="stars-large">
+          {% for i in range(1, 6) %}
+            {% if i <= subject.avg_rating|int %}
+              <span class="star filled">★</span>
+            {% elif i <= subject.avg_rating + 0.5 %}
+              <span class="star half">★</span>
+            {% else %}
+              <span class="star empty">☆</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="review-count-label">{{ subject.review_count }} reviews</div>
+      </div>
+    </div>
+    {% endif %}
+    {% if subject.description %}
+    <p class="subject-description">{{ subject.description }}</p>
+    {% endif %}
+    <a href="#write-review" class="btn-primary write-review-btn">✏️ Write a Review</a>
+  </div>
+</div>
+
+<div class="reviews-section">
+  <h2 class="section-title">
+    Reviews
+    {% if pagination.total %}
+    <span class="count-badge">{{ pagination.total }}</span>
+    {% endif %}
+  </h2>
+
+  {% if pagination.items %}
+  <div class="reviews-list">
+    {% for review in pagination.items %}
+    <article class="review-card">
+      <div class="review-card-header">
+        <div class="review-author-info">
+          <div class="review-author-avatar">{{ review.author_name[0]|upper if review.author_name else 'A' }}</div>
+          <div>
+            <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
+            <div class="review-meta">
+              <span class="review-source">via {{ review.source_site }}</span>
+              {% if review.original_date %}
+              <span class="review-date">· {{ review.original_date.strftime('%b %d, %Y') }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="review-rating">
+          {% for i in range(1, 6) %}
+            <span class="star {% if i <= review.rating %}filled{% else %}empty{% endif %}">★</span>
+          {% endfor %}
+          <span class="rating-num">{{ review.rating }}/5</span>
+        </div>
+      </div>
+      <a href="{{ url_for('main.review', category_slug=category.slug, subject_slug=subject.slug, review_id=review.id) }}" class="review-title-link">
+        <h3 class="review-title">{{ review.title }}</h3>
+      </a>
+      {% if review.image_path %}
+      <img src="{{ url_for('static', filename=review.image_path) }}" alt="Review photo" class="review-card-img">
+      {% endif %}
+      <p class="review-excerpt">{{ review.body[:300] }}{% if review.body|length > 300 %}…{% endif %}</p>
+      <a href="{{ url_for('main.review', category_slug=category.slug, subject_slug=subject.slug, review_id=review.id) }}" class="read-more">Read full review →</a>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="pagination">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug, page=pagination.prev_num) }}" class="page-btn">← Previous</a>
+    {% endif %}
+    <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug, page=pagination.next_num) }}" class="page-btn">Next →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-reviews">
+    <p>No reviews yet for {{ subject.name }}. Be the first!</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Write a Review ─────────────────────────────────────────── -->
+<div class="write-review-section" id="write-review">
+  <h2 class="section-title">Write a Review</h2>
+
+  {% if form_errors %}
+  <div class="form-errors">
+    {% for err in form_errors %}<p>⚠ {{ err }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  <form class="review-form" method="POST" enctype="multipart/form-data"
+        action="{{ url_for('main.submit_review', category_slug=category.slug, subject_slug=subject.slug) }}">
+
+    <div class="form-group">
+      <label class="form-label">Your rating <span class="required">*</span></label>
+      <div class="star-picker" id="star-picker">
+        {% for i in range(1, 6) %}
+        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
+               {% if form_data and form_data.get('rating')|int == i %}checked
+               {% elif not form_data and i == 5 %}checked{% endif %}>
+        <label for="star{{ i }}" title="{{ i }} star{{ 's' if i > 1 }}">★</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="review-title">Title <span class="required">*</span></label>
+      <input type="text" id="review-title" name="title" class="form-input"
+             placeholder="Summarize your experience in one line"
+             value="{{ form_data.get('title', '') if form_data else '' }}" required maxlength="200">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="review-body">Review <span class="required">*</span></label>
+      <textarea id="review-body" name="body" class="form-textarea" rows="6"
+                placeholder="Share your experience — what do you love? What should others know? How is training, grooming, health?" required minlength="20">{{ form_data.get('body', '') if form_data else '' }}</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="review-author">Your name</label>
+        <input type="text" id="review-author" name="author_name" class="form-input"
+               placeholder="e.g. Sarah M."
+               value="{{ form_data.get('author_name', '') if form_data else '' }}" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="review-image">Add a photo <span class="form-hint">(optional, max 10MB)</span></label>
+        <input type="file" id="review-image" name="image" class="form-file" accept="image/*">
+        <div class="image-preview" id="image-preview"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary btn-submit">Submit Review</button>
+  </form>
+</div>
+
+<script>
+// Live image preview
+document.getElementById('review-image').addEventListener('change', function() {
+  const preview = document.getElementById('image-preview');
+  preview.innerHTML = '';
+  const file = this.files[0];
+  if (!file) return;
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(file);
+  img.onload = () => URL.revokeObjectURL(img.src);
+  preview.appendChild(img);
+});
+</script>
+{% endblock %}

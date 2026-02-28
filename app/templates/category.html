@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% set breadcrumbs = [
+  {'label': category.name, 'url': None}
+] %}
+
+{% block title %}{{ category.name }} Reviews - Verdictly{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-icon">{{ category.icon or '📦' }}</div>
+  <div>
+    <h1>{{ category.name }}</h1>
+    {% if category.description %}
+    <p class="page-desc">{{ category.description }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% for subcat in subcategories %}
+<section class="subcat-section">
+  <h2 class="subcat-title">{{ subcat.name }}</h2>
+  {% set subjects = subcat.subjects.order_by('name').all() %}
+  {% if subjects %}
+  <div class="subjects-grid">
+    {% for subj in subjects %}
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subj.slug) }}" class="subject-card">
+      {% if subj.image_path %}
+      <div class="subject-img-wrap">
+        <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
+      </div>
+      {% else %}
+      <div class="subject-img-placeholder">🐾</div>
+      {% endif %}
+      <div class="subject-card-body">
+        <h3 class="subject-name">{{ subj.name }}</h3>
+        {% if subj.review_count > 0 %}
+        <div class="subject-meta">
+          <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
+          <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
+          <span class="review-count">({{ subj.review_count }} reviews)</span>
+        </div>
+        {% else %}
+        <span class="no-reviews">No reviews yet</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No breeds yet in {{ subcat.name }}.</p>
+  {% endif %}
+</section>
+{% else %}
+<p class="empty-state">No subcategories found.</p>
+{% endfor %}
+{% endblock %}

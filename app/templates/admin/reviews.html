@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block title %}Reviews{% endblock %}
+{% block page_title %}Reviews{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<form method="GET" class="filter-bar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search title or author…" class="form-input filter-search">
+  <select name="source" class="form-input filter-select">
+    <option value="">All sources</option>
+    {% for s in sources %}
+    <option value="{{ s }}" {% if source == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="published" class="form-input filter-select">
+    <option value="">All statuses</option>
+    <option value="1" {% if published == '1' %}selected{% endif %}>Published</option>
+    <option value="0" {% if published == '0' %}selected{% endif %}>Pending</option>
+  </select>
+  <button type="submit" class="btn-sm btn-primary">Filter</button>
+  <a href="{{ url_for('admin.reviews') }}" class="btn-sm">Reset</a>
+</form>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Breed</th>
+      <th>Author</th>
+      <th>⭐</th>
+      <th>Photo</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rev in pagination.items %}
+    <tr>
+      <td class="td-title">
+        <a href="{{ url_for('admin.edit_review', review_id=rev.id) }}">{{ rev.title[:55] }}{% if rev.title|length > 55 %}…{% endif %}</a>
+      </td>
+      <td>{{ rev.subject.name }}</td>
+      <td>{{ rev.author_name or '—' }}</td>
+      <td>{{ rev.rating }}</td>
+      <td>
+        {% if rev.image_path %}
+        <img src="{{ url_for('static', filename=rev.image_path) }}" class="admin-thumb" alt="">
+        {% else %}—{% endif %}
+      </td>
+      <td>
+        <form method="POST" action="{{ url_for('admin.toggle_published', review_id=rev.id) }}" style="display:inline">
+          <button type="submit" class="badge {% if rev.is_published %}badge-green{% else %}badge-yellow{% endif %} badge-btn">
+            {{ 'Published' if rev.is_published else 'Pending' }}
+          </button>
+        </form>
+      </td>
+      <td class="td-actions">
+        <a href="{{ url_for('admin.edit_review', review_id=rev.id) }}" class="btn-sm">Edit</a>
+        <form method="POST" action="{{ url_for('admin.delete_review', review_id=rev.id) }}"
+              onsubmit="return confirm('Delete this review?')" style="display:inline">
+          <button type="submit" class="btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+<nav class="pagination" style="margin-top:20px">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('admin.reviews', page=pagination.prev_num, q=q, source=source, published=published) }}" class="page-btn">← Prev</a>
+  {% endif %}
+  <span class="page-info">{{ pagination.page }} / {{ pagination.pages }}</span>
+  {% if pagination.has_next %}
+  <a href="{{ url_for('admin.reviews', page=pagination.next_num, q=q, source=source, published=published) }}" class="page-btn">Next →</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.published }}</div>
+    <div class="stat-label">Published reviews</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.unpublished }}</div>
+    <div class="stat-label">Pending reviews</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.with_images }}</div>
+    <div class="stat-label">Reviews with photos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.subjects }}</div>
+    <div class="stat-label">Breeds</div>
+  </div>
+</div>
+
+<!-- Visitor stats -->
+<h2 class="admin-section-title">Visitor Traffic</h2>
+<div class="stat-grid" style="margin-bottom:20px">
+  <div class="stat-card">
+    <div class="stat-value">{{ visit_stats.today }}</div>
+    <div class="stat-label">Visits today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ visit_stats.last_7 }}</div>
+    <div class="stat-label">Last 7 days</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ visit_stats.last_30 }}</div>
+    <div class="stat-label">Last 30 days</div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-title">Page views — last 30 days</div>
+  {% set max_count = visit_stats.chart | map(attribute='count') | max %}
+  <div class="bar-chart">
+    {% for day in visit_stats.chart %}
+    {% set pct = (day.count / max_count * 100) if max_count > 0 else 0 %}
+    <div class="bar-wrap" title="{{ day.date }}: {{ day.count }} views">
+      <div class="bar" style="height: {{ pct }}%"></div>
+      {% if loop.index == 1 or loop.index == 8 or loop.index == 15 or loop.index == 22 or loop.index == 30 %}
+      <div class="bar-label">{{ day.date[5:] }}</div>
+      {% else %}
+      <div class="bar-label"></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<h2 class="admin-section-title">Recent reviews</h2>
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Breed</th>
+      <th>Author</th>
+      <th>Rating</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rev in recent %}
+    <tr>
+      <td><a href="{{ url_for('admin.edit_review', review_id=rev.id) }}">{{ rev.title[:60] }}</a></td>
+      <td>{{ rev.subject.name }}</td>
+      <td>{{ rev.author_name or '—' }}</td>
+      <td>{{ '★' * rev.rating }}</td>
+      <td><span class="badge {% if rev.is_published %}badge-green{% else %}badge-yellow{% endif %}">
+        {{ 'Published' if rev.is_published else 'Pending' }}
+      </span></td>
+      <td>
+        <a href="{{ url_for('admin.edit_review', review_id=rev.id) }}" class="btn-sm">Edit</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

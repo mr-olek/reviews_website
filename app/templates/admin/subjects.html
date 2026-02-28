@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}Breed Photos{% endblock %}
+{% block page_title %}Breed Photos{% endblock %}
+
+{% block content %}
+<div class="subjects-admin-grid">
+  {% for subj in subjects %}
+  <div class="subject-admin-card">
+    <div class="subject-admin-img-wrap">
+      {% if subj.image_path %}
+      <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}">
+      {% else %}
+      <div class="subject-admin-placeholder">🐾</div>
+      {% endif %}
+    </div>
+    <div class="subject-admin-info">
+      <div class="subject-admin-name">{{ subj.name }}</div>
+      <div class="subject-admin-sub">{{ subj.subcategory.name }} · {{ subj.review_count }} reviews</div>
+      <form method="POST" enctype="multipart/form-data"
+            action="{{ url_for('admin.upload_subject_image', subject_id=subj.id) }}"
+            class="subject-upload-form">
+        <input type="file" name="image" accept="image/*" class="form-file" required>
+        <button type="submit" class="btn-sm btn-primary" style="margin-top:6px">Upload photo</button>
+      </form>
+      {% if subj.image_path %}
+      <form method="POST" action="{{ url_for('admin.delete_subject_image', subject_id=subj.id) }}"
+            onsubmit="return confirm('Remove photo for {{ subj.name }}?')" style="margin-top:4px">
+        <button type="submit" class="btn-sm btn-danger">Remove photo</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

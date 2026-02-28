@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Subjects{% endblock %}
+
+{% block content %}
+<h1>Admin: Subjects</h1>
+<p>Use the API endpoints to manage subjects. Password required via <code>?password=</code> or <code>X-Admin-Password</code> header.</p>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Subcategory</th>
+      <th>Reviews</th>
+      <th>Avg Rating</th>
+      <th>Image</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for subj in subjects %}
+    <tr>
+      <td>{{ subj.id }}</td>
+      <td>{{ subj.name }}</td>
+      <td>{{ subj.subcategory.name }}</td>
+      <td>{{ subj.review_count }}</td>
+      <td>{{ "%.1f"|format(subj.avg_rating) }}</td>
+      <td>{% if subj.image_path %}✓{% else %}—{% endif %}</td>
+      <td>
+        <button onclick="triggerScrape({{ subj.id }})">Scrape</button>
+        <button onclick="triggerProcess({{ subj.id }})">Process</button>
+        <button onclick="triggerImage({{ subj.id }})">Gen Image</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+const pass = '{{ request.args.get("password", "") }}';
+
+async function post(url) {
+  const r = await fetch(url + '?password=' + pass, {method: 'POST'});
+  const d = await r.json();
+  alert(JSON.stringify(d));
+}
+function triggerScrape(id) { post('/admin/scrape/' + id); }
+function triggerProcess(id) { post('/admin/process/' + id); }
+function triggerImage(id) { post('/admin/generate-image/' + id); }
+</script>
+{% endblock %}

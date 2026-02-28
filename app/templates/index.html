@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Verdictly - Honest Reviews on Everything{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Real Reviews on Everything</h1>
+  <p class="hero-sub">Thousands of honest opinions on pets, products, places, and more.</p>
+</section>
+
+<section class="categories-section">
+  <h2 class="section-title">Browse Categories</h2>
+  {% if categories %}
+  <div class="categories-grid">
+    {% for cat in categories %}
+    <a href="{{ url_for('main.category', category_slug=cat.slug) }}" class="category-card">
+      <div class="category-icon">{{ cat.icon or '📦' }}</div>
+      <h3 class="category-name">{{ cat.name }}</h3>
+      {% if cat.description %}
+      <p class="category-desc">{{ cat.description }}</p>
+      {% endif %}
+      <span class="category-count">
+        {{ cat.subcategories.count() }} subcategories
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">No categories yet. Run <code>python seed.py</code> to get started.</p>
+  {% endif %}
+</section>
+{% endblock %}

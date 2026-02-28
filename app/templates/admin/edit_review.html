@@ -1,0 +1,85 @@
+{% extends "admin/base.html" %}
+{% block title %}Edit Review{% endblock %}
+{% block page_title %}Edit Review{% endblock %}
+
+{% block content %}
+{# Delete-photo form lives OUTSIDE the main edit form to avoid nesting #}
+{% if review.image_path %}
+<form id="delete-photo-form" method="POST"
+      action="{{ url_for('admin.delete_review_image', review_id=review.id) }}"
+      onsubmit="return confirm('Remove this photo?')"></form>
+{% endif %}
+
+<div class="edit-card">
+  <form method="POST" enctype="multipart/form-data" class="review-form">
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <label class="toggle-label">
+        <input type="checkbox" name="is_published" {% if review.is_published %}checked{% endif %}>
+        <span class="toggle-text">Published (visible to users)</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="rating">Rating</label>
+      <div class="star-picker">
+        {% for i in range(1, 6) %}
+        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if review.rating == i %}checked{% endif %}>
+        <label for="star{{ i }}">★</label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="title">Title</label>
+      <input type="text" id="title" name="title" class="form-input" value="{{ review.title }}" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="author_name">Author</label>
+      <input type="text" id="author_name" name="author_name" class="form-input" value="{{ review.author_name or '' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="body">Body</label>
+      <textarea id="body" name="body" class="form-textarea" rows="10" required>{{ review.body }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Photo</label>
+      {% if review.image_path %}
+      <div class="current-image">
+        <img src="{{ url_for('static', filename=review.image_path) }}" alt="Current photo" class="edit-preview-img">
+        {# form= links this button to the delete-photo-form above, no nesting needed #}
+        <button type="submit" form="delete-photo-form" class="btn-sm btn-danger" style="margin-top:8px">Remove photo</button>
+      </div>
+      {% else %}
+      <p class="form-hint" style="margin-bottom:8px">No photo attached.</p>
+      {% endif %}
+      <label class="form-label" style="margin-top:8px">Replace photo</label>
+      <input type="file" name="image" class="form-file" accept="image/*">
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Save changes</button>
+      <a href="{{ url_for('admin.reviews') }}" class="btn-sm" style="margin-left:12px">Cancel</a>
+    </div>
+  </form>
+
+  <div class="review-meta-box">
+    <h3>Info</h3>
+    <dl>
+      <dt>Subject</dt><dd>{{ review.subject.name }}</dd>
+      <dt>Source</dt><dd>{{ review.source_site }}</dd>
+      <dt>Submitted</dt><dd>{{ review.created_at.strftime('%Y-%m-%d %H:%M') if review.created_at else '—' }}</dd>
+      {% if review.original_url and not review.original_url.startswith(('generated://', 'sample://')) %}
+      <dt>Original URL</dt><dd><a href="{{ review.original_url }}" target="_blank">link ↗</a></dd>
+      {% endif %}
+    </dl>
+    <form method="POST" action="{{ url_for('admin.delete_review', review_id=review.id) }}"
+          onsubmit="return confirm('Permanently delete this review?')">
+      <button type="submit" class="btn-sm btn-danger" style="margin-top:16px;width:100%">Delete review</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
