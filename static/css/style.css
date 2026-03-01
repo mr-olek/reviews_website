@@ -223,6 +223,12 @@ a:hover { text-decoration: underline; }
 .rating-num { font-weight: 600; }
 .review-count { color: var(--text-muted); }
 .no-reviews { font-size: .8rem; color: var(--text-muted); }
+.subcat-desc { font-size: .8rem; color: var(--text-muted); margin: 6px 0 4px; line-height: 1.4; }
+.subcat-pros-cons { display: flex; gap: 6px; margin-top: 6px; }
+.subcat-pros, .subcat-cons { list-style: none; padding: 0; margin: 0; font-size: .75rem; flex: 1; }
+.subcat-pros li::before { content: '✓ '; color: #16a34a; }
+.subcat-cons li::before { content: '✗ '; color: #dc2626; }
+.subcat-pros li, .subcat-cons li { line-height: 1.5; color: var(--text-muted); }
 
 /* ---- Subject header ---- */
 .subject-header {

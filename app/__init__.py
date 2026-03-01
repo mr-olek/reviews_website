@@ -31,6 +31,9 @@ def _migrate(db):
     migrations = [
         "ALTER TABLE categories ADD COLUMN image_path VARCHAR(500)",
         "ALTER TABLE subcategories ADD COLUMN image_path VARCHAR(500)",
+        "ALTER TABLE subcategories ADD COLUMN description TEXT",
+        "ALTER TABLE subcategories ADD COLUMN pros TEXT",
+        "ALTER TABLE subcategories ADD COLUMN cons TEXT",
         "ALTER TABLE subjects ADD COLUMN pros TEXT",
         "ALTER TABLE subjects ADD COLUMN cons TEXT",
         """CREATE TABLE IF NOT EXISTS review_replies (

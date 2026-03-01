@@ -31,6 +31,27 @@
     <div class="subject-card-body">
       <h3 class="subject-name">{{ subcat.name }}</h3>
       <span class="review-count">{{ subcat.subjects.count() }} breeds</span>
+      {% if subcat.description %}
+      <p class="subcat-desc">{{ subcat.description }}</p>
+      {% endif %}
+      {% if subcat.pros or subcat.cons %}
+      <div class="subcat-pros-cons">
+        {% if subcat.pros %}
+        <ul class="subcat-pros">
+          {% for item in subcat.pros.split('\n') %}{% if item.strip() %}
+          <li>{{ item.strip() }}</li>
+          {% endif %}{% endfor %}
+        </ul>
+        {% endif %}
+        {% if subcat.cons %}
+        <ul class="subcat-cons">
+          {% for item in subcat.cons.split('\n') %}{% if item.strip() %}
+          <li>{{ item.strip() }}</li>
+          {% endif %}{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
   </a>
   {% endfor %}
