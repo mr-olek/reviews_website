@@ -50,10 +50,16 @@ def index():
     return render_template('index.html', categories=categories)
 
 
+_SUBCAT_ORDER = [
+    'dogs', 'cats', 'rabbits', 'fish', 'small-animals', 'parrots',
+    'horses', 'chickens', 'reptiles', 'ferrets', 'turtles-tortoises',
+]
+
 @main.route('/<category_slug>/')
 def category(category_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
-    subcats = SubCategory.query.filter_by(category_id=cat.id).order_by(SubCategory.name).all()
+    subcats = SubCategory.query.filter_by(category_id=cat.id).all()
+    subcats.sort(key=lambda s: _SUBCAT_ORDER.index(s.slug) if s.slug in _SUBCAT_ORDER else 999)
     return render_template('category.html', category=cat, subcategories=subcats)
 
 
