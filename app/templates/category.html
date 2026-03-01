@@ -18,7 +18,11 @@
 </div>
 
 {% if subcategories %}
+{% if category.slug == 'cars' %}
+<p class="category-hint">Click on a car brand to browse model reviews by year.</p>
+{% else %}
 <p class="category-hint">Click on an animal type to browse breed reviews.</p>
+{% endif %}
 <div class="subjects-grid">
   {% for subcat in subcategories %}
   {% set stats = subcat_stats[subcat.id] %}
@@ -28,12 +32,16 @@
       <img src="{{ url_for('static', filename=subcat.image_path) }}" alt="{{ subcat.name }}" loading="lazy">
     </div>
     {% else %}
-    <div class="subject-img-placeholder">🐾</div>
+    <div class="subject-img-placeholder">{% if category.slug == 'cars' %}🚗{% else %}🐾{% endif %}</div>
     {% endif %}
     <div class="subject-card-body">
       <h3 class="subject-name">{{ subcat.name }}</h3>
       <div class="subcat-meta">
+        {% if category.slug == 'cars' %}
+        <span class="review-count">{{ subcat.subjects.count() }} models</span>
+        {% else %}
         <span class="review-count">{{ subcat.subjects.count() }} breeds</span>
+        {% endif %}
         {% if stats.review_count %}
         <span class="subcat-sep">·</span>
         <span class="review-count">{{ stats.review_count }} reviews</span>

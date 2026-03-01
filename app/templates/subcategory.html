@@ -86,6 +86,6 @@
   </div>
 
 {% else %}
-<p class="empty-state">No entries yet in {{ subcategory.name }}.</p>
+<p class="empty-state">No {{ 'models' if subjects_by_year is not none else 'breeds' }} yet in {{ subcategory.name }}.</p>
 {% endif %}
 {% endblock %}
