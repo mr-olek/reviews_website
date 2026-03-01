@@ -46,8 +46,13 @@ def track_visit():
 
 @main.route('/')
 def index():
+    from .models import Subject
     categories = Category.query.order_by(Category.name).all()
-    return render_template('index.html', categories=categories)
+    cat_review_counts = {}
+    for cat in categories:
+        subjects = Subject.query.join(SubCategory).filter(SubCategory.category_id == cat.id).all()
+        cat_review_counts[cat.id] = sum(s.review_count or 0 for s in subjects)
+    return render_template('index.html', categories=categories, cat_review_counts=cat_review_counts)
 
 
 _SUBCAT_ORDER = [

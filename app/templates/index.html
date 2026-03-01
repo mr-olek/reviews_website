@@ -27,7 +27,7 @@
       <p class="category-desc">{{ cat.description }}</p>
       {% endif %}
       <span class="category-count">
-        {{ cat.subcategories.count() }} subcategories
+        {{ cat.subcategories.count() }} subcategories · {{ cat_review_counts[cat.id] }} reviews
       </span>
       {% if cat.image_path %}</div>{% endif %}
     </a>
