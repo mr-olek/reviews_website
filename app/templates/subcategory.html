@@ -24,68 +24,40 @@
   </div>
 </div>
 
-{% if subjects_by_year %}
-  {# Year-slate layout (Cars & Vehicles) #}
-  {% for year, year_subjects in subjects_by_year.items() %}
-  <div class="year-section">
-    <h2 class="year-heading">{{ year }}</h2>
-    <div class="subjects-grid">
-      {% for subj in year_subjects %}
-      <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subj.slug) }}" class="subject-card">
-        {% if subj.image_path %}
-        <div class="subject-img-wrap">
-          <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
-        </div>
-        {% else %}
-        <div class="subject-img-placeholder">🚗</div>
-        {% endif %}
-        <div class="subject-card-body">
-          <h3 class="subject-name">{{ subj.name.rsplit(' ', 1)[0] }}</h3>
-          {% if subj.review_count > 0 %}
-          <div class="subject-meta">
-            <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
-            <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
-            <span class="review-count">({{ subj.review_count }})</span>
-          </div>
-          {% else %}
-          <span class="no-reviews">No reviews yet</span>
-          {% endif %}
-        </div>
-      </a>
-      {% endfor %}
+{% if subjects %}
+<div class="subjects-grid">
+  {% for subj in subjects %}
+  {% set tail = subj.slug.rsplit('-', 1)[-1] %}
+  {% set has_year = tail|length == 4 and tail.isdigit() %}
+  <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subj.slug) }}" class="subject-card">
+    {% if subj.image_path %}
+    <div class="subject-img-wrap">
+      <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
     </div>
-  </div>
-  {% endfor %}
-
-{% elif subjects %}
-  {# Flat grid layout (Animals & other categories) #}
-  <div class="subjects-grid">
-    {% for subj in subjects %}
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subj.slug) }}" class="subject-card">
-      {% if subj.image_path %}
-      <div class="subject-img-wrap">
-        <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
+    {% else %}
+    <div class="subject-img-placeholder">{{ '🚗' if has_year else '🐾' }}</div>
+    {% endif %}
+    <div class="subject-card-body">
+      {% if has_year %}
+      <span class="subject-year-tag">{{ subj.name.rsplit(' ', 1)[-1] }}</span>
+      <h3 class="subject-name">{{ subj.name.rsplit(' ', 1)[0] }}</h3>
+      {% else %}
+      <h3 class="subject-name">{{ subj.name }}</h3>
+      {% endif %}
+      {% if subj.review_count > 0 %}
+      <div class="subject-meta">
+        <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
+        <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
+        <span class="review-count">({{ subj.review_count }} reviews)</span>
       </div>
       {% else %}
-      <div class="subject-img-placeholder">🐾</div>
+      <span class="no-reviews">No reviews yet</span>
       {% endif %}
-      <div class="subject-card-body">
-        <h3 class="subject-name">{{ subj.name }}</h3>
-        {% if subj.review_count > 0 %}
-        <div class="subject-meta">
-          <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
-          <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
-          <span class="review-count">({{ subj.review_count }} reviews)</span>
-        </div>
-        {% else %}
-        <span class="no-reviews">No reviews yet</span>
-        {% endif %}
-      </div>
-    </a>
-    {% endfor %}
-  </div>
-
+    </div>
+  </a>
+  {% endfor %}
+</div>
 {% else %}
-<p class="empty-state">No {{ 'models' if subjects_by_year is not none else 'breeds' }} yet in {{ subcategory.name }}.</p>
+<p class="empty-state">No entries yet in {{ subcategory.name }}.</p>
 {% endif %}
 {% endblock %}
