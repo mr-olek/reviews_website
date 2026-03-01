@@ -1,37 +1,29 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
+import uuid
 from datetime import datetime
-from urllib.parse import quote
 
 from bs4 import BeautifulSoup
 
 from .base import BaseScraper
-from .ru_names import to_russian
+from .ru_names import to_irecommend_slug
 
 logger = logging.getLogger(__name__)
-
-MONTH_MAP = {
-    'января': 1, 'февраля': 2, 'марта': 3, 'апреля': 4,
-    'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
-    'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12,
-}
 
 
 def _parse_date(text: str) -> datetime | None:
     if not text:
         return None
     text = text.strip()
-    m = re.match(r'(\d{1,2})\s+(\w+)\s+(\d{4})', text)
+    m = re.match(r'(\d{2})\.(\d{2})\.(\d{4})', text)
     if m:
-        day, month_str, year = m.group(1), m.group(2).lower(), m.group(3)
-        month = MONTH_MAP.get(month_str)
-        if month:
-            try:
-                return datetime(int(year), month, int(day))
-            except ValueError:
-                pass
+        try:
+            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        except ValueError:
+            pass
     return None
 
 
@@ -40,28 +32,27 @@ class IRecommendScraper(BaseScraper):
     base_url = 'https://irecommend.ru'
 
     def scrape_reviews(self, subject_name: str, breed_type: str = '') -> list[dict]:
-        ru_name = to_russian(subject_name)
-        # irecommend search endpoint
-        search_url = f'{self.base_url}/search?q={quote(ru_name)}'
-        logger.info(f"[irecommend] searching: '{ru_name}' → {search_url}")
+        slug = to_irecommend_slug(subject_name)
+        if not slug:
+            logger.info(f"[irecommend] no slug for '{subject_name}', skipping")
+            return []
+
+        breed_url = f'{self.base_url}/content/{slug}'
+        logger.info(f"[irecommend] breed page: {breed_url}")
 
         reviews = []
         page = 0
 
         while len(reviews) < self.max_reviews:
-            url = search_url if page == 0 else f'{search_url}&page={page}'
+            url = breed_url if page == 0 else f'{breed_url}?page={page}'
             resp = self._get(url)
             if resp is None:
                 break
 
             soup = BeautifulSoup(resp.text, 'lxml')
-            # irecommend search results
-            items = soup.select(
-                'div.teaser-product, article.node-review, '
-                'div.view-content div.views-row, li.search-result'
-            )
+            items = soup.select('div.smTeaser, div.teaser-item, article.node-review')
             if not items:
-                logger.debug(f"[irecommend] no items on page {page}")
+                logger.debug(f"[irecommend] no items on page {page} for '{subject_name}'")
                 break
 
             for item in items:
@@ -71,7 +62,7 @@ class IRecommendScraper(BaseScraper):
                 if len(reviews) >= self.max_reviews:
                     break
 
-            next_btn = soup.select_one('li.pager-next a, a[rel="next"]')
+            next_btn = soup.select_one('li.pager-next a, a.pager-next, a[rel="next"]')
             if not next_btn:
                 break
             page += 1
@@ -81,63 +72,79 @@ class IRecommendScraper(BaseScraper):
 
     def _parse_item(self, item) -> dict | None:
         try:
-            link_el = item.select_one('a[href*="/content/"], h2 a, h3 a, .views-field-title a')
+            link_el = item.select_one('a.reviewTextSnippet, a[href*="/content/"]')
             if not link_el:
                 return None
             href = link_el.get('href', '')
             url = href if href.startswith('http') else self.base_url + href
 
-            title = link_el.get_text(strip=True)
+            title_el = item.select_one('div.reviewTitle, h2, h3')
+            title = title_el.get_text(strip=True) if title_el else link_el.get_text(strip=True)
+            title = re.sub(r'\s+', ' ', title).strip()
 
-            # Rating
-            rating = 0
-            rating_el = item.select_one('[class*="rating"], [class*="stars"], .field-name-field-rating')
-            if rating_el:
-                txt = rating_el.get_text()
-                m = re.search(r'(\d)', txt)
-                if m:
-                    rating = int(m.group(1))
-            if not rating:
-                filled = item.select('.star-on, .filled, i.active')
-                rating = len(filled)
-            rating = max(1, min(5, rating)) if rating else 3
+            body_el = item.select_one('span.reviewTeaserText, a.reviewTextSnippet')
+            body_snippet = body_el.get_text(strip=True) if body_el else ''
 
-            author_el = item.select_one('a[href*="/user/"], .username, .views-field-name a')
-            author = author_el.get_text(strip=True) if author_el else 'Anonymous'
+            author = 'Anonymous'
+            original_date = None
+            header_text = item.get_text(separator=' ', strip=True)
+            date_m = re.search(r'(\d{2}\.\d{2}\.\d{4})', header_text)
+            if date_m:
+                original_date = _parse_date(date_m.group(1))
+            author_el = item.select_one('a[href*="/user/"], .username, .author-name')
+            if author_el:
+                author = author_el.get_text(strip=True)
+            elif date_m:
+                before_date = header_text[:date_m.start()].strip()
+                if before_date:
+                    author = before_date.split()[-1] if before_date.split() else 'Anonymous'
 
-            date_el = item.select_one('time, span.date, .views-field-created')
-            date_text = (
-                date_el.get('datetime') or date_el.get_text(strip=True)
-                if date_el else ''
-            )
-            original_date = _parse_date(date_text)
+            rating = 3
+            rating_m = re.search(r'\b([1-5])\b(?=\s*/\s*5)', header_text)
+            if rating_m:
+                rating = int(rating_m.group(1))
+            else:
+                filled = item.select('.star-on, .fivestar-widget-static-vote .on, span.on')
+                if filled:
+                    rating = max(1, min(5, len(filled)))
 
-            body_el = item.select_one(
-                'div.description, div.field-name-body, .views-field-body, p.review-body'
-            )
-            body = body_el.get_text(strip=True) if body_el else ''
+            # Extract thumbnail image URL from the review card
+            image_url = self._extract_card_image(item)
 
-            if not body or len(body) < 50:
+            # Fetch full review page for body + full-size image
+            if not body_snippet or len(body_snippet) < 50 or not image_url:
                 full = self._fetch_full_review(url)
                 if full:
                     title = full.get('title') or title
-                    body = full.get('body') or body
+                    body_snippet = full.get('body') or body_snippet
+                    if not image_url:
+                        image_url = full.get('image_url')
 
-            if not body or not title:
+            if not body_snippet or not title:
                 return None
 
             return {
                 'title': title,
-                'body': body,
+                'body': body_snippet,
                 'rating': rating,
                 'author_name': author,
                 'original_url': url,
                 'source_site': self.site_name,
                 'original_date': original_date,
+                'image_url': image_url,
             }
         except Exception as e:
             logger.debug(f"[irecommend] parse error: {e}")
             return None
+
+    def _extract_card_image(self, item) -> str | None:
+        """Extract the first thumbnail image URL from a review card."""
+        for container in item.select('div.review-previews-imgs, div.reviewImages, div.reviewPhoto'):
+            for img in container.find_all('img'):
+                src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+                if src and self._is_review_image(src):
+                    return self._abs_url(src)
+        return None
 
     def _fetch_full_review(self, url: str) -> dict | None:
         resp = self._get(url)
@@ -147,10 +154,56 @@ class IRecommendScraper(BaseScraper):
 
         title_el = soup.select_one('h1.page-header, h1.title, h1')
         title = title_el.get_text(strip=True) if title_el else ''
+        title = re.sub(r'\s*—\s*отзыв\s*$', '', title).strip()
 
         body_el = soup.select_one(
-            'div.field-name-body, div.description, article .field-items'
+            '.views-field-teaser.reviewText, .field-name-body, div.description, article .field-items'
         )
         body = body_el.get_text(separator='\n', strip=True) if body_el else ''
 
-        return {'title': title, 'body': body} if body else None
+        # Extract first image from the review body
+        image_url = None
+        search_scope = body_el or soup
+        for img in search_scope.find_all('img'):
+            src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+            if src and self._is_review_image(src):
+                image_url = self._abs_url(src)
+                break
+
+        return {'title': title, 'body': body, 'image_url': image_url} if (body or image_url) else None
+
+    def _is_review_image(self, src: str) -> bool:
+        """Return True if URL looks like a user-uploaded review image."""
+        skip = ('logo', 'icon', 'avatar', 'star', 'favicon', 'sprite', 'banner', 'themes/')
+        return not any(s in src.lower() for s in skip)
+
+    def _abs_url(self, src: str) -> str:
+        if src.startswith('//'):
+            return 'https:' + src
+        if src.startswith('/'):
+            return self.base_url + src
+        return src
+
+    def download_image(self, image_url: str, upload_dir: str) -> str | None:
+        """Download an image to upload_dir, return relative static path."""
+        try:
+            resp = self.session.get(image_url, timeout=15)
+            if resp.status_code != 200 or len(resp.content) < 5000:
+                return None
+            ct = resp.headers.get('content-type', '')
+            if 'jpeg' in ct or 'jpg' in ct:
+                ext = 'jpg'
+            elif 'png' in ct:
+                ext = 'png'
+            elif 'webp' in ct:
+                ext = 'webp'
+            else:
+                ext = 'jpg'
+            filename = f"{uuid.uuid4().hex}.{ext}"
+            os.makedirs(upload_dir, exist_ok=True)
+            with open(os.path.join(upload_dir, filename), 'wb') as f:
+                f.write(resp.content)
+            return f"images/uploads/reviews/{filename}"
+        except Exception as e:
+            logger.debug(f"[irecommend] image download failed {image_url}: {e}")
+            return None

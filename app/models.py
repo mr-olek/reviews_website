@@ -10,6 +10,7 @@ class Category(db.Model):
     slug = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
     icon = db.Column(db.String(50))  # emoji or icon class
+    image_path = db.Column(db.String(500))
 
     subcategories = db.relationship('SubCategory', backref='category', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -24,6 +25,7 @@ class SubCategory(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), nullable=False)
+    image_path = db.Column(db.String(500))
 
     subjects = db.relationship('Subject', backref='subcategory', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -41,6 +43,8 @@ class Subject(db.Model):
     name = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
+    pros = db.Column(db.Text)   # newline-separated bullet points
+    cons = db.Column(db.Text)   # newline-separated bullet points
     image_path = db.Column(db.String(500))
     avg_rating = db.Column(db.Float, default=0.0)
     review_count = db.Column(db.Integer, default=0)
@@ -78,8 +82,30 @@ class Review(db.Model):
     is_published = db.Column(db.Boolean, default=False)
     image_path = db.Column(db.String(500))
 
+    all_replies = db.relationship('ReviewReply', backref='review', lazy='dynamic',
+                                  cascade='all, delete-orphan',
+                                  foreign_keys='ReviewReply.review_id',
+                                  order_by='ReviewReply.created_at')
+
     def __repr__(self):
         return f'<Review {self.id}: {self.title[:50]}>'
+
+
+class ReviewReply(db.Model):
+    __tablename__ = 'review_replies'
+
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey('reviews.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('review_replies.id'), nullable=True)
+    author_name = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    children = db.relationship('ReviewReply', backref=db.backref('parent', remote_side='ReviewReply.id'),
+                               lazy='dynamic', order_by='ReviewReply.created_at')
+
+    def __repr__(self):
+        return f'<ReviewReply {self.id} on review {self.review_id}>'
 
 
 class PageView(db.Model):

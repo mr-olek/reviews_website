@@ -19,9 +19,36 @@ def create_app(config_name='default'):
 
     with app.app_context():
         db.create_all()
+        _migrate(db)
         _start_scheduler(app)
 
     return app
+
+
+def _migrate(db):
+    """Add any missing columns to existing tables (SQLite-safe)."""
+    from sqlalchemy import text
+    migrations = [
+        "ALTER TABLE categories ADD COLUMN image_path VARCHAR(500)",
+        "ALTER TABLE subcategories ADD COLUMN image_path VARCHAR(500)",
+        "ALTER TABLE subjects ADD COLUMN pros TEXT",
+        "ALTER TABLE subjects ADD COLUMN cons TEXT",
+        """CREATE TABLE IF NOT EXISTS review_replies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_id INTEGER NOT NULL REFERENCES reviews(id),
+            parent_id INTEGER REFERENCES review_replies(id),
+            author_name VARCHAR(200) NOT NULL,
+            body TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )""",
+    ]
+    with db.engine.connect() as conn:
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                pass  # column already exists
 
 
 def _start_scheduler(app):

@@ -13,8 +13,15 @@
   {% if categories %}
   <div class="categories-grid">
     {% for cat in categories %}
-    <a href="{{ url_for('main.category', category_slug=cat.slug) }}" class="category-card">
+    <a href="{{ url_for('main.category', category_slug=cat.slug) }}" class="category-card {% if cat.image_path %}category-card--img{% endif %}">
+      {% if cat.image_path %}
+      <div class="category-img-wrap">
+        <img src="{{ url_for('static', filename=cat.image_path) }}" alt="{{ cat.name }}" loading="lazy">
+      </div>
+      <div class="category-card-body">
+      {% else %}
       <div class="category-icon">{{ cat.icon or '📦' }}</div>
+      {% endif %}
       <h3 class="category-name">{{ cat.name }}</h3>
       {% if cat.description %}
       <p class="category-desc">{{ cat.description }}</p>
@@ -22,6 +29,7 @@
       <span class="category-count">
         {{ cat.subcategories.count() }} subcategories
       </span>
+      {% if cat.image_path %}</div>{% endif %}
     </a>
     {% endfor %}
   </div>

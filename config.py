@@ -11,6 +11,7 @@ class Config:
 
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-6')
+    HF_API_KEY = os.environ.get('HF_API_KEY', '')
 
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 

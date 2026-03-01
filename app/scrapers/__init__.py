@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime
 
 from flask import current_app
@@ -41,11 +42,21 @@ def run_scraper(subject, db) -> int:
         try:
             raw_reviews = scraper.scrape_reviews(subject.name, breed_type)
             new_count = 0
+            upload_dir = current_app.config['UPLOADS_DIR']
 
             for raw in raw_reviews:
                 url = raw.get('original_url', '')
                 if url and Review.query.filter_by(original_url=url).first():
                     continue  # deduplicate
+
+                # Download image if scraper found one
+                image_path = None
+                image_url = raw.get('image_url')
+                if image_url and hasattr(scraper, 'download_image'):
+                    image_path = scraper.download_image(
+                        image_url,
+                        os.path.join(upload_dir, 'reviews'),
+                    )
 
                 review = Review(
                     subject_id=subject.id,
@@ -57,6 +68,7 @@ def run_scraper(subject, db) -> int:
                     source_site=raw.get('source_site', scraper.site_name),
                     original_date=raw.get('original_date'),
                     is_published=False,
+                    image_path=image_path,
                 )
                 db.session.add(review)
                 new_count += 1

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% set breadcrumbs = [
+  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': subcategory.name, 'url': None}
+] %}
+
+{% block title %}{{ subcategory.name }} Reviews - Verdictly{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  {% if subcategory.image_path %}
+  <div class="page-header-img">
+    <img src="{{ url_for('static', filename=subcategory.image_path) }}" alt="{{ subcategory.name }}">
+  </div>
+  {% else %}
+  <div class="page-header-icon">{{ category.icon or '📦' }}</div>
+  {% endif %}
+  <div>
+    <h1>{{ subcategory.name }}</h1>
+    {% if subcategory.description %}
+    <p class="page-desc">{{ subcategory.description }}</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if subjects %}
+<div class="subjects-grid">
+  {% for subj in subjects %}
+  <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subj.slug) }}" class="subject-card">
+    {% if subj.image_path %}
+    <div class="subject-img-wrap">
+      <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
+    </div>
+    {% else %}
+    <div class="subject-img-placeholder">🐾</div>
+    {% endif %}
+    <div class="subject-card-body">
+      <h3 class="subject-name">{{ subj.name }}</h3>
+      {% if subj.review_count > 0 %}
+      <div class="subject-meta">
+        <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
+        <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
+        <span class="review-count">({{ subj.review_count }} reviews)</span>
+      </div>
+      {% else %}
+      <span class="no-reviews">No reviews yet</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty-state">No breeds yet in {{ subcategory.name }}.</p>
+{% endif %}
+{% endblock %}

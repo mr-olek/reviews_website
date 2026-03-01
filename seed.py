@@ -27,6 +27,17 @@ DOGS = [
     ('Rottweiler', 'rottweiler', 'Robust and powerful guard dog with a loyal and loving personality.'),
     ('German Shorthaired Pointer', 'german-shorthaired-pointer', 'Versatile, friendly hunting and sporting dog.'),
     ('Dachshund', 'dachshund', 'Clever, lively, and courageous small breed with a big personality.'),
+    # New dog breeds
+    ('Siberian Husky', 'siberian-husky', 'Athletic, loyal sled dog with striking blue eyes and high energy.'),
+    ('Border Collie', 'border-collie', 'The world\'s most intelligent dog, bred for herding with intense focus.'),
+    ('Australian Shepherd', 'australian-shepherd', 'Energetic, highly trainable herding dog that loves having a job.'),
+    ('Boxer', 'boxer', 'Playful, energetic, and loyal family dog with a goofy personality.'),
+    ('Yorkshire Terrier', 'yorkshire-terrier', 'Tiny but feisty terrier with a gorgeous silky coat and bold attitude.'),
+    ('Shih Tzu', 'shih-tzu', 'Affectionate lap dog bred for Chinese royalty, loves to be pampered.'),
+    ('Doberman Pinscher', 'doberman-pinscher', 'Fearless, loyal, and highly intelligent guardian breed.'),
+    ('Chihuahua', 'chihuahua', 'The world\'s smallest dog breed, with a huge personality to compensate.'),
+    ('Cavalier King Charles Spaniel', 'cavalier-king-charles-spaniel', 'Gentle, affectionate, and adaptable companion with a silky coat.'),
+    ('Bernese Mountain Dog', 'bernese-mountain-dog', 'Gentle giant from Switzerland, calm and devoted with a tri-colour coat.'),
 ]
 
 CATS = [
@@ -40,6 +51,27 @@ CATS = [
     ('Sphynx', 'sphynx', 'Hairless, wrinkled, and surprisingly warm to the touch.'),
     ('Bengal', 'bengal', 'Wildly beautiful with an energetic and playful nature.'),
     ('Russian Blue', 'russian-blue', 'Reserved with strangers but devoted to family.'),
+    ('Norwegian Forest Cat', 'norwegian-forest-cat', 'Hardy, independent, and built for cold climates with a thick double coat.'),
+    ('Burmese', 'burmese', 'Affectionate, playful, and thrives on human companionship.'),
+    ('Devon Rex', 'devon-rex', 'Curly-coated, elfin-faced, and endlessly mischievous.'),
+    ('American Shorthair', 'american-shorthair', 'Hardy, adaptable, and one of the most popular pedigree breeds in the USA.'),
+    ('Exotic Shorthair', 'exotic-shorthair', 'The plush, low-maintenance version of the Persian.'),
+    ('Birman', 'birman', 'Silky semi-long coat, blue eyes, and a gentle, curious nature.'),
+    ('Tonkinese', 'tonkinese', 'Intelligent, social, and a natural cross between Siamese and Burmese.'),
+    ('Himalayan', 'himalayan', 'Persian body with Siamese colourpoints and an ultra-calm temperament.'),
+    ('Turkish Angora', 'turkish-angora', 'Elegant, athletic, and one of the oldest natural cat breeds.'),
+    ('Chartreux', 'chartreux', 'Ancient French breed with a blue-grey coat and a quiet, loyal character.'),
+    # New cat breeds
+    ('Munchkin', 'munchkin', 'Short-legged, playful, and surprisingly agile little cat with a big personality.'),
+    ('Siberian', 'siberian', 'Large, powerful Russian forest cat with a hypoallergenic-friendly coat.'),
+    ('Turkish Van', 'turkish-van', 'Loves water, has a distinctive coloured tail, and is fiercely playful.'),
+    ('Cornish Rex', 'cornish-rex', 'Wavy-coated, bat-eared, and endlessly energetic show-off.'),
+    ('Balinese', 'balinese', 'Long-haired Siamese cousin that is equally vocal but slightly calmer.'),
+    ('Somali', 'somali', 'Long-haired Abyssinian with a bushy fox-like tail and boundless curiosity.'),
+    ('Egyptian Mau', 'egyptian-mau', 'The fastest domestic cat breed, naturally spotted and fiercely loyal.'),
+    ('Manx', 'manx', 'Tailless or short-tailed island cat known for its round shape and playful nature.'),
+    ('Selkirk Rex', 'selkirk-rex', 'Plush, curly-coated cat with a patient and loving temperament.'),
+    ('Savannah', 'savannah', 'Tall, exotic-looking hybrid of domestic cat and serval with boundless energy.'),
 ]
 
 
@@ -55,26 +87,35 @@ def seed_db(app, db):
                 slug='animals',
                 description='Reviews of cat and dog breeds from real pet owners.',
                 icon='🐾',
+                image_path='images/defaults/animals.jpg',
             )
             db.session.add(cat)
             db.session.flush()
             logger.info("Created category: Animals")
+        elif not cat.image_path:
+            cat.image_path = 'images/defaults/animals.jpg'
 
         # SubCategory: Dogs
         dogs_sub = SubCategory.query.filter_by(category_id=cat.id, slug='dogs').first()
         if not dogs_sub:
-            dogs_sub = SubCategory(category_id=cat.id, name='Dogs', slug='dogs')
+            dogs_sub = SubCategory(category_id=cat.id, name='Dogs', slug='dogs',
+                                   image_path='images/defaults/dogs.jpg')
             db.session.add(dogs_sub)
             db.session.flush()
             logger.info("Created subcategory: Dogs")
+        elif not dogs_sub.image_path:
+            dogs_sub.image_path = 'images/defaults/dogs.jpg'
 
         # SubCategory: Cats
         cats_sub = SubCategory.query.filter_by(category_id=cat.id, slug='cats').first()
         if not cats_sub:
-            cats_sub = SubCategory(category_id=cat.id, name='Cats', slug='cats')
+            cats_sub = SubCategory(category_id=cat.id, name='Cats', slug='cats',
+                                   image_path='images/defaults/cats.jpg')
             db.session.add(cats_sub)
             db.session.flush()
             logger.info("Created subcategory: Cats")
+        elif not cats_sub.image_path:
+            cats_sub.image_path = 'images/defaults/cats.jpg'
 
         # Seed dog breeds
         for name, slug, desc in DOGS:

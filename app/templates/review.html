@@ -2,7 +2,8 @@
 
 {% set breadcrumbs = [
   {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
-  {'label': subject.name, 'url': url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug)},
+  {'label': subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
+  {'label': subject.name, 'url': url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug)},
   {'label': 'Review', 'url': None}
 ] %}
 
@@ -12,7 +13,7 @@
 <article class="review-full">
   <div class="review-full-header">
     <div class="review-subject-link">
-      <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug) }}">
+      <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}">
         {% if subject.image_path %}
         <img src="{{ url_for('static', filename=subject.image_path) }}" alt="{{ subject.name }}" class="review-subject-thumb">
         {% endif %}
@@ -28,7 +29,7 @@
         <div>
           <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
           <div class="review-meta-detail">
-            <span>via {{ review.source_site }}</span>
+            {% if review.source_site == 'user' %}<span>via verified owner</span>{% endif %}
             {% if review.original_date %}
             <span>· {{ review.original_date.strftime('%B %d, %Y') }}</span>
             {% endif %}
@@ -61,9 +62,78 @@
   </div>
 
   <div class="review-full-footer">
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug) }}" class="back-link">
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}" class="back-link">
       ← Back to {{ subject.name }} reviews
     </a>
   </div>
 </article>
+
+<!-- Replies section -->
+<section class="replies-section" id="replies">
+  <h2 class="replies-heading">
+    Responses
+    {% if top_replies %}<span class="replies-count">{{ top_replies|length }}</span>{% endif %}
+  </h2>
+
+  {% for reply in top_replies %}
+  <div class="reply-thread">
+    <div class="reply-card" id="reply-{{ reply.id }}">
+      <div class="reply-avatar">{{ reply.author_name[0]|upper }}</div>
+      <div class="reply-body-wrap">
+        <div class="reply-meta">
+          <span class="reply-author">{{ reply.author_name }}</span>
+          <span class="reply-date">{{ reply.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+        <p class="reply-body">{{ reply.body }}</p>
+        <button class="reply-toggle-btn" onclick="toggleReplyForm('reply-form-{{ reply.id }}')">Reply</button>
+        <form class="reply-form hidden" id="reply-form-{{ reply.id }}"
+              action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
+              method="post">
+          <input type="hidden" name="parent_id" value="{{ reply.id }}">
+          <input class="reply-input" type="text" name="author_name" placeholder="Your name" required maxlength="100">
+          <textarea class="reply-input" name="body" placeholder="Write a reply…" required rows="2" maxlength="2000"></textarea>
+          <button type="submit" class="reply-submit-btn">Post reply</button>
+        </form>
+
+        {% set children = reply.children.all() %}
+        {% if children %}
+        <div class="reply-children">
+          {% for child in children %}
+          <div class="reply-card reply-card--child" id="reply-{{ child.id }}">
+            <div class="reply-avatar reply-avatar--sm">{{ child.author_name[0]|upper }}</div>
+            <div class="reply-body-wrap">
+              <div class="reply-meta">
+                <span class="reply-author">{{ child.author_name }}</span>
+                <span class="reply-date">{{ child.created_at.strftime('%b %d, %Y') }}</span>
+              </div>
+              <p class="reply-body">{{ child.body }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- New top-level reply form -->
+  <div class="reply-new">
+    <h3 class="reply-new-heading">Leave a response</h3>
+    <form class="reply-form reply-form--top"
+          action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
+          method="post">
+      <input class="reply-input" type="text" name="author_name" placeholder="Your name" required maxlength="100">
+      <textarea class="reply-input" name="body" placeholder="Share your thoughts on this review…" required rows="4" maxlength="2000"></textarea>
+      <button type="submit" class="btn-primary">Post response</button>
+    </form>
+  </div>
+</section>
+
+<script>
+function toggleReplyForm(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('hidden');
+}
+</script>
 {% endblock %}

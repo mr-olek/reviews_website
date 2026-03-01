@@ -255,6 +255,62 @@ def delete_subject_image(subject_id):
 
 
 # ---------------------------------------------------------------------------
+# Categories / SubCategories (image uploads)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route('/categories/<int:cat_id>/upload-image', methods=['POST'])
+@admin_required
+def upload_category_image(cat_id):
+    cat = Category.query.get_or_404(cat_id)
+    path = _save_upload(request.files.get('image'), 'categories')
+    if path:
+        _delete_file(cat.image_path)
+        cat.image_path = path
+        db.session.commit()
+        flash(f'Photo updated for {cat.name}.', 'success')
+    else:
+        flash('Invalid file.', 'error')
+    return redirect(url_for('admin.subjects'))
+
+
+@admin_bp.route('/categories/<int:cat_id>/delete-image', methods=['POST'])
+@admin_required
+def delete_category_image(cat_id):
+    cat = Category.query.get_or_404(cat_id)
+    _delete_file(cat.image_path)
+    cat.image_path = None
+    db.session.commit()
+    flash(f'Photo removed for {cat.name}.', 'success')
+    return redirect(url_for('admin.subjects'))
+
+
+@admin_bp.route('/subcategories/<int:subcat_id>/upload-image', methods=['POST'])
+@admin_required
+def upload_subcategory_image(subcat_id):
+    subcat = SubCategory.query.get_or_404(subcat_id)
+    path = _save_upload(request.files.get('image'), 'subcategories')
+    if path:
+        _delete_file(subcat.image_path)
+        subcat.image_path = path
+        db.session.commit()
+        flash(f'Photo updated for {subcat.name}.', 'success')
+    else:
+        flash('Invalid file.', 'error')
+    return redirect(url_for('admin.subjects'))
+
+
+@admin_bp.route('/subcategories/<int:subcat_id>/delete-image', methods=['POST'])
+@admin_required
+def delete_subcategory_image(subcat_id):
+    subcat = SubCategory.query.get_or_404(subcat_id)
+    _delete_file(subcat.image_path)
+    subcat.image_path = None
+    db.session.commit()
+    flash(f'Photo removed for {subcat.name}.', 'success')
+    return redirect(url_for('admin.subjects'))
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

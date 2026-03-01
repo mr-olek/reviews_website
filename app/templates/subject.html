@@ -2,6 +2,7 @@
 
 {% set breadcrumbs = [
   {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
   {'label': subject.name, 'url': None}
 ] %}
 
@@ -38,12 +39,41 @@
       </div>
     </div>
     {% endif %}
-    {% if subject.description %}
-    <p class="subject-description">{{ subject.description }}</p>
-    {% endif %}
     <a href="#write-review" class="btn-primary write-review-btn">✏️ Write a Review</a>
   </div>
 </div>
+
+{% if subject.description or subject.pros or subject.cons %}
+<div class="breed-info-section">
+  {% if subject.description %}
+  <p class="breed-overview">{{ subject.description }}</p>
+  {% endif %}
+  {% if subject.pros or subject.cons %}
+  <div class="pros-cons-grid">
+    {% if subject.pros %}
+    <div class="pros-card">
+      <h3 class="pros-cons-heading pros-heading">Pros</h3>
+      <ul class="pros-cons-list">
+        {% for item in subject.pros.split('\n') %}{% if item.strip() %}
+        <li>{{ item.strip() }}</li>
+        {% endif %}{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if subject.cons %}
+    <div class="cons-card">
+      <h3 class="pros-cons-heading cons-heading">Cons</h3>
+      <ul class="pros-cons-list">
+        {% for item in subject.cons.split('\n') %}{% if item.strip() %}
+        <li>{{ item.strip() }}</li>
+        {% endif %}{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
 
 <div class="reviews-section">
   <h2 class="section-title">
@@ -63,7 +93,7 @@
           <div>
             <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
             <div class="review-meta">
-              <span class="review-source">via {{ review.source_site }}</span>
+              {% if review.source_site == 'user' %}<span class="review-source">via verified owner</span>{% endif %}
               {% if review.original_date %}
               <span class="review-date">· {{ review.original_date.strftime('%b %d, %Y') }}</span>
               {% endif %}
@@ -77,14 +107,14 @@
           <span class="rating-num">{{ review.rating }}/5</span>
         </div>
       </div>
-      <a href="{{ url_for('main.review', category_slug=category.slug, subject_slug=subject.slug, review_id=review.id) }}" class="review-title-link">
+      <a href="{{ url_for('main.review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}" class="review-title-link">
         <h3 class="review-title">{{ review.title }}</h3>
       </a>
       {% if review.image_path %}
       <img src="{{ url_for('static', filename=review.image_path) }}" alt="Review photo" class="review-card-img">
       {% endif %}
       <p class="review-excerpt">{{ review.body[:300] }}{% if review.body|length > 300 %}…{% endif %}</p>
-      <a href="{{ url_for('main.review', category_slug=category.slug, subject_slug=subject.slug, review_id=review.id) }}" class="read-more">Read full review →</a>
+      <a href="{{ url_for('main.review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}" class="read-more">Read full review →</a>
     </article>
     {% endfor %}
   </div>
@@ -92,11 +122,11 @@
   {% if pagination.pages > 1 %}
   <nav class="pagination">
     {% if pagination.has_prev %}
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug, page=pagination.prev_num) }}" class="page-btn">← Previous</a>
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.prev_num) }}" class="page-btn">← Previous</a>
     {% endif %}
     <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
     {% if pagination.has_next %}
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subject_slug=subject.slug, page=pagination.next_num) }}" class="page-btn">Next →</a>
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.next_num) }}" class="page-btn">Next →</a>
     {% endif %}
   </nav>
   {% endif %}
@@ -119,7 +149,7 @@
   {% endif %}
 
   <form class="review-form" method="POST" enctype="multipart/form-data"
-        action="{{ url_for('main.submit_review', category_slug=category.slug, subject_slug=subject.slug) }}">
+        action="{{ url_for('main.submit_review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}">
 
     <div class="form-group">
       <label class="form-label">Your rating <span class="required">*</span></label>
