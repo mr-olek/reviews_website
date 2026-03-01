@@ -26,6 +26,9 @@ class SubCategory(db.Model):
     name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(100), nullable=False)
     image_path = db.Column(db.String(500))
+    description = db.Column(db.Text)
+    pros = db.Column(db.Text)
+    cons = db.Column(db.Text)
 
     subjects = db.relationship('Subject', backref='subcategory', lazy='dynamic', cascade='all, delete-orphan')
 
