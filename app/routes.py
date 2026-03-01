@@ -103,7 +103,17 @@ def subcategory(category_slug, subcategory_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
     subjects = subcat.subjects.order_by('name').all()
-    return render_template('subcategory.html', category=cat, subcategory=subcat, subjects=subjects)
+
+    # Group by year when subjects encode a year in their slug (e.g. camry-2024)
+    by_year = {}
+    for s in subjects:
+        tail = s.slug.rsplit('-', 1)[-1]
+        if tail.isdigit() and len(tail) == 4:
+            by_year.setdefault(int(tail), []).append(s)
+    subjects_by_year = dict(sorted(by_year.items(), reverse=True)) if by_year else None
+
+    return render_template('subcategory.html', category=cat, subcategory=subcat,
+                           subjects=subjects, subjects_by_year=subjects_by_year)
 
 
 @main.route('/<category_slug>/<subcategory_slug>/<subject_slug>/')

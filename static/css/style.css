@@ -190,6 +190,19 @@ a:hover { text-decoration: underline; }
   margin-bottom: 20px;
 }
 
+/* ---- Year sections (Cars & Vehicles) ---- */
+.year-section { margin-bottom: 32px; }
+.year-heading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 14px;
+}
+
 /* ---- Subject card ---- */
 .subjects-grid {
   display: grid;
