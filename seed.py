@@ -85,7 +85,7 @@ def seed_db(app, db):
             cat = Category(
                 name='Animals',
                 slug='animals',
-                description='Reviews of cat and dog breeds from real pet owners.',
+                description='Reviews of animals and pet breeds from real owners.',
                 icon='🐾',
                 image_path='images/defaults/animals.jpg',
             )
