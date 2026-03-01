@@ -57,10 +57,21 @@ _SUBCAT_ORDER = [
 
 @main.route('/<category_slug>/')
 def category(category_slug):
+    from .models import Subject
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcats = SubCategory.query.filter_by(category_id=cat.id).all()
     subcats.sort(key=lambda s: _SUBCAT_ORDER.index(s.slug) if s.slug in _SUBCAT_ORDER else 999)
-    return render_template('category.html', category=cat, subcategories=subcats)
+
+    # Aggregate review count and avg rating per subcategory
+    subcat_stats = {}
+    for sc in subcats:
+        subjects = Subject.query.filter_by(subcategory_id=sc.id).all()
+        total_reviews = sum(s.review_count or 0 for s in subjects)
+        rated = [s for s in subjects if s.avg_rating and s.review_count]
+        avg = (sum(s.avg_rating * s.review_count for s in rated) / sum(s.review_count for s in rated)) if rated else 0
+        subcat_stats[sc.id] = {'review_count': total_reviews, 'avg_rating': round(avg, 1)}
+
+    return render_template('category.html', category=cat, subcategories=subcats, subcat_stats=subcat_stats)
 
 
 def _allowed_file(filename: str) -> bool:
