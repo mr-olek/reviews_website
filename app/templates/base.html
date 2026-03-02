@@ -17,7 +17,9 @@
       </a>
       <nav class="main-nav">
         <a href="{{ url_for('main.index') }}">Home</a>
-        <a href="{{ url_for('main.category', category_slug='animals') }}">Animals</a>
+        {% for cat in nav_categories %}
+        <a href="{{ url_for('main.category', category_slug=cat.slug) }}">{{ cat.name }}</a>
+        {% endfor %}
       </nav>
     </div>
   </header>

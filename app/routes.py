@@ -60,12 +60,28 @@ _SUBCAT_ORDER = [
     'horses', 'chickens', 'reptiles', 'ferrets', 'turtles-tortoises',
 ]
 
+# Food cuisines: Ukrainian first, then by global popularity
+_FOOD_ORDER = [
+    'ukrainian', 'italian', 'japanese', 'chinese', 'mexican', 'indian',
+    'french', 'american', 'thai', 'greek', 'spanish', 'turkish', 'lebanese',
+    'korean', 'vietnamese', 'moroccan', 'ethiopian', 'brazilian', 'peruvian',
+    'german', 'british', 'russian', 'indonesian', 'malaysian', 'filipino',
+    'portuguese', 'argentinian', 'swedish', 'polish', 'hungarian', 'georgian',
+    'iranian', 'israeli', 'egyptian', 'nigerian', 'south-african', 'pakistani',
+    'sri-lankan', 'cambodian', 'singaporean', 'taiwanese', 'australian',
+    'canadian', 'jamaican', 'cuban', 'colombian', 'bangladeshi', 'nepalese',
+    'afghan', 'uzbek', 'armenian', 'azerbaijani', 'burmese', 'norwegian',
+    'danish', 'czech', 'tunisian', 'ghanaian', 'venezuelan', 'chilean',
+    'ecuadorian', 'bolivian',
+]
+
 @main.route('/<category_slug>/')
 def category(category_slug):
     from .models import Subject
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
-    subcats = SubCategory.query.filter_by(category_id=cat.id).all()
-    subcats.sort(key=lambda s: _SUBCAT_ORDER.index(s.slug) if s.slug in _SUBCAT_ORDER else 999)
+    subcats = SubCategory.query.filter_by(category_id=cat.id).order_by(db.func.lower(SubCategory.name)).all()
+    order = _FOOD_ORDER if cat.slug == 'food' else _SUBCAT_ORDER
+    subcats.sort(key=lambda s: order.index(s.slug) if s.slug in order else 999)
 
     # Aggregate review count and avg rating per subcategory
     subcat_stats = {}

@@ -17,6 +17,11 @@ def create_app(config_name='default'):
     from .admin import admin_bp
     app.register_blueprint(admin_bp)
 
+    @app.context_processor
+    def inject_nav_categories():
+        from .models import Category
+        return {'nav_categories': Category.query.order_by(Category.name).all()}
+
     with app.app_context():
         db.create_all()
         _migrate(db)
