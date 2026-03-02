@@ -20,6 +20,8 @@
 {% if subcategories %}
 {% if category.slug == 'cars' %}
 <p class="category-hint">Click on a car brand to browse model reviews by year.</p>
+{% elif category.slug == 'drinks' %}
+<p class="category-hint">Click on a drink type to browse reviews.</p>
 {% else %}
 <p class="category-hint">Click on an animal type to browse breed reviews.</p>
 {% endif %}
@@ -39,6 +41,8 @@
       <div class="subcat-meta">
         {% if category.slug == 'cars' %}
         <span class="review-count">{{ subcat.subjects.count() }} models</span>
+        {% elif category.slug in ('drinks', 'sports', 'countries', 'plants', 'food') %}
+        <span class="review-count">{{ subcat.subjects.count() }} types</span>
         {% else %}
         <span class="review-count">{{ subcat.subjects.count() }} breeds</span>
         {% endif %}
