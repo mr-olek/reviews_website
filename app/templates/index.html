@@ -4,8 +4,27 @@
 
 {% block content %}
 <section class="hero">
-  <h1>Real Reviews on Everything</h1>
-  <p class="hero-sub">The definitive source for real reviews on pets, food, cars, plants, and everything in between.</p>
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Trusted by readers worldwide</p>
+    <h1>Real Reviews on <span class="hero-accent">Everything</span></h1>
+    <p class="hero-sub">The definitive source for honest reviews on pets, food, cars, plants, drinks, sports, countries, and everything in between.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ total_reviews | default(0) }}</span>
+        <span class="hero-stat-label">Reviews</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ categories | length }}</span>
+        <span class="hero-stat-label">Categories</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">{{ total_subjects | default(0) }}</span>
+        <span class="hero-stat-label">Topics</span>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="categories-section">

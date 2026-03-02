@@ -52,7 +52,10 @@ def index():
     for cat in categories:
         subjects = Subject.query.join(SubCategory).filter(SubCategory.category_id == cat.id).all()
         cat_review_counts[cat.id] = sum(s.review_count or 0 for s in subjects)
-    return render_template('index.html', categories=categories, cat_review_counts=cat_review_counts)
+    total_reviews = sum(cat_review_counts.values())
+    total_subjects = Subject.query.count()
+    return render_template('index.html', categories=categories, cat_review_counts=cat_review_counts,
+                           total_reviews=total_reviews, total_subjects=total_subjects)
 
 
 _SUBCAT_ORDER = [

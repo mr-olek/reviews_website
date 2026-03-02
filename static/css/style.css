@@ -101,22 +101,74 @@ a:hover { text-decoration: underline; }
 /* ---- Hero ---- */
 .hero {
   text-align: center;
-  padding: 56px 20px;
+  padding: 64px 20px 56px;
   background: linear-gradient(135deg, #eff6ff 0%, #fef3c7 100%);
   border-radius: var(--radius);
   margin-bottom: 48px;
 }
+.hero-inner {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 14px;
+}
 .hero h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2.8rem;
+  font-weight: 800;
   color: var(--text);
-  margin-bottom: 12px;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+.hero-accent {
+  color: var(--primary);
 }
 .hero-sub {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text-muted);
-  max-width: 520px;
-  margin: 0 auto;
+  max-width: 480px;
+  margin: 0 auto 32px;
+  line-height: 1.6;
+}
+.hero-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: inline-flex;
+}
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+}
+.hero-stat-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.hero-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.hero-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(0,0,0,0.12);
 }
 
 /* ---- Section titles ---- */
@@ -525,7 +577,9 @@ a:hover { text-decoration: underline; }
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
-  .hero h1 { font-size: 1.8rem; }
+  .hero h1 { font-size: 2rem; }
+  .hero-stat { padding: 0 16px; }
+  .hero-stat-num { font-size: 1.3rem; }
   .subjects-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .review-full { padding: 20px; }
   .review-full-meta { flex-direction: column; }
