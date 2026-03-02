@@ -546,7 +546,7 @@ def run(args):
             deleted += Review.query.filter_by(subject_id=subj.id, source_site='generated').delete()
             db.session.commit()
 
-            target = args.count
+            target = random.randint(12, 25)
             used_titles: set[str] = set()
             reviews_added = 0
 
