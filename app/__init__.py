@@ -36,12 +36,30 @@ def create_app(config_name='default'):
             'LANGUAGES': LANGUAGES,
         }
 
+    _ensure_persistent_db(app)
+
     with app.app_context():
         db.create_all()
         _migrate(db)
         _start_scheduler(app)
 
     return app
+
+
+def _ensure_persistent_db(app):
+    """On Azure App Service, copy seed DB to /home/ on first deploy."""
+    import os, shutil
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if not db_uri.startswith('sqlite:////'):
+        return  # Not an absolute path (local dev), skip
+    db_path = db_uri[len('sqlite:///'):]  # e.g. /home/reviews.db
+    if os.path.exists(db_path):
+        return  # Already exists, nothing to do
+    seed = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'instance', 'reviews.db'))
+    if os.path.exists(seed):
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        shutil.copy2(seed, db_path)
+        app.logger.info(f'First deploy: copied seed database to {db_path}')
 
 
 def _migrate(db):
