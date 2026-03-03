@@ -259,6 +259,7 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
     db.session.commit()
     subj.update_stats()
     db.session.commit()
+    cache.clear()
 
     return redirect(url_for('main.review', category_slug=category_slug,
                             subcategory_slug=subcategory_slug,
@@ -303,6 +304,7 @@ def post_reply(category_slug, subcategory_slug, subject_slug, review_id):
         )
         db.session.add(reply)
         db.session.commit()
+        cache.clear()
 
     return redirect(url_for('main.review', category_slug=category_slug,
                             subcategory_slug=subcategory_slug,
