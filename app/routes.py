@@ -21,7 +21,7 @@ from flask import (
     Blueprint, current_app, make_response, redirect, session,
     render_template, request, url_for,
 )
-from . import db
+from . import db, cache
 from .models import Category, Review, ReviewReply, Subject, SubCategory
 from .utils import save_upload
 
@@ -97,8 +97,19 @@ def set_lang(code):
     return redirect(request.referrer or url_for('main.index'))
 
 
+def _page_cache_key():
+    lang = session.get('lang', 'en')
+    qs = request.query_string.decode('utf-8', errors='replace')
+    return f'page:{request.path}:{qs}:{lang}'
+
+
 @main.before_request
 def track_visit():
+    # Skip static files, admin, and bots to avoid unnecessary DB writes
+    if (request.path.startswith('/static/')
+            or request.path.startswith('/admin/')
+            or request.path in ('/favicon.ico', '/robots.txt', '/sitemap.xml', '/llms.txt')):
+        return
     from .models import PageView
     db.session.add(PageView(
         path=request.path,
@@ -112,13 +123,17 @@ def track_visit():
 # ---------------------------------------------------------------------------
 
 @main.route('/')
+@cache.cached(timeout=300, key_prefix=_page_cache_key)
 def index():
-    from .models import Subject
+    from sqlalchemy import func
     categories = Category.query.order_by(Category.name).all()
-    cat_review_counts = {}
-    for cat in categories:
-        subjects = Subject.query.join(SubCategory).filter(SubCategory.category_id == cat.id).all()
-        cat_review_counts[cat.id] = sum(s.review_count or 0 for s in subjects)
+    counts = (
+        db.session.query(SubCategory.category_id, func.sum(Subject.review_count))
+        .join(Subject, Subject.subcategory_id == SubCategory.id)
+        .group_by(SubCategory.category_id)
+        .all()
+    )
+    cat_review_counts = {cat_id: int(count or 0) for cat_id, count in counts}
     total_reviews = sum(cat_review_counts.values())
     total_subjects = Subject.query.count()
     return render_template('index.html', categories=categories, cat_review_counts=cat_review_counts,
@@ -146,6 +161,7 @@ _FOOD_ORDER = [
 ]
 
 @main.route('/<category_slug>/')
+@cache.cached(timeout=300, key_prefix=_page_cache_key)
 def category(category_slug):
     from .models import Subject
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
@@ -168,6 +184,7 @@ def category(category_slug):
 
 
 @main.route('/<category_slug>/<subcategory_slug>/')
+@cache.cached(timeout=300, key_prefix=_page_cache_key)
 def subcategory(category_slug, subcategory_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
@@ -176,6 +193,7 @@ def subcategory(category_slug, subcategory_slug):
 
 
 @main.route('/<category_slug>/<subcategory_slug>/<subject_slug>/')
+@cache.cached(timeout=120, key_prefix=_page_cache_key)
 def subject(category_slug, subcategory_slug, subject_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
@@ -248,6 +266,7 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
 
 
 @main.route('/<category_slug>/<subcategory_slug>/<subject_slug>/<int:review_id>/')
+@cache.cached(timeout=300, key_prefix=_page_cache_key)
 def review(category_slug, subcategory_slug, subject_slug, review_id):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()

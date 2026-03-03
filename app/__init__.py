@@ -1,8 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_caching import Cache
 from config import config
 
 db = SQLAlchemy()
+cache = Cache()
 
 
 def create_app(config_name='default'):
@@ -10,6 +12,7 @@ def create_app(config_name='default'):
     app.config.from_object(config[config_name])
 
     db.init_app(app)
+    cache.init_app(app)
 
     from .routes import main
     app.register_blueprint(main)

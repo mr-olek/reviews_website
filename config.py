@@ -24,6 +24,13 @@ class Config:
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB upload limit
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 
+    # Caching
+    CACHE_TYPE = 'SimpleCache'
+    CACHE_DEFAULT_TIMEOUT = 300  # 5 minutes
+
+    # Tell browsers to cache static files for 1 year
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000
+
 class DevelopmentConfig(Config):
     DEBUG = True
 
