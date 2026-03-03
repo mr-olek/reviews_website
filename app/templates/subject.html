@@ -189,7 +189,7 @@
     <div class="form-group">
       <label class="form-label">{{ t('ui.your_rating') }} <span class="required">*</span></label>
       <div class="star-picker" id="star-picker">
-        {% for i in range(1, 6) %}
+        {% for i in range(5, 0, -1) %}
         <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
                {% if form_data and form_data.get('rating')|int == i %}checked
                {% elif not form_data and i == 5 %}checked{% endif %}>
