@@ -2,17 +2,15 @@ from __future__ import annotations
 
 import logging
 import os
-import uuid
 from datetime import datetime
 
 from flask import (
     Blueprint, current_app, flash, redirect, render_template,
     request, session, url_for,
 )
-from werkzeug.utils import secure_filename
-
 from . import db
 from .models import Category, Review, Subject, SubCategory
+from .utils import save_upload as _save_upload
 
 logger = logging.getLogger(__name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -36,20 +34,6 @@ def admin_required(f):
     return wrapper
 
 
-def _allowed_file(filename: str) -> bool:
-    allowed = current_app.config.get('ALLOWED_EXTENSIONS', {'jpg', 'jpeg', 'png', 'gif', 'webp'})
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
-
-
-def _save_upload(file, subfolder: str) -> str | None:
-    if not file or not file.filename or not _allowed_file(file.filename):
-        return None
-    ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    upload_dir = os.path.join(current_app.config['UPLOADS_DIR'], subfolder)
-    os.makedirs(upload_dir, exist_ok=True)
-    file.save(os.path.join(upload_dir, filename))
-    return f"images/uploads/{subfolder}/{filename}"
 
 
 # ---------------------------------------------------------------------------
@@ -62,12 +46,14 @@ def login():
         return redirect(url_for('admin.dashboard'))
     error = None
     if request.method == 'POST':
-        if request.form.get('password') == current_app.config.get('ADMIN_PASSWORD'):
+        username_ok = request.form.get('username') == current_app.config.get('ADMIN_USERNAME')
+        password_ok = request.form.get('password') == current_app.config.get('ADMIN_PASSWORD')
+        if username_ok and password_ok:
             session['admin'] = True
             session.permanent = False
             next_url = request.args.get('next') or url_for('admin.dashboard')
             return redirect(next_url)
-        error = 'Incorrect password.'
+        error = 'Incorrect username or password.'
     return render_template('admin/login.html', error=error)
 
 

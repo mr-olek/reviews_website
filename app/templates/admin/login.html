@@ -19,9 +19,12 @@
     {% endif %}
 
     <form method="POST" class="login-form">
-      <label class="form-label" for="password">Password</label>
+      <label class="form-label" for="username">Username</label>
+      <input type="text" id="username" name="username" class="form-input"
+             placeholder="Enter username" autofocus required autocomplete="username">
+      <label class="form-label" for="password" style="margin-top:14px">Password</label>
       <input type="password" id="password" name="password" class="form-input"
-             placeholder="Enter admin password" autofocus required>
+             placeholder="Enter password" required autocomplete="current-password">
       <button type="submit" class="btn-primary" style="width:100%;margin-top:16px;padding:12px">
         Sign in
       </button>

@@ -1,31 +1,56 @@
 {% extends "base.html" %}
 
 {% set breadcrumbs = [
-  {'label': category.name, 'url': None}
+  {'label': t_cat(category.slug, 'name') or category.name, 'url': None}
 ] %}
 
-{% block title %}{{ category.name }} Reviews - Verdictly{% endblock %}
+{% block title %}{{ t_cat(category.slug, 'name') or category.name }} Reviews - Verdictly{% endblock %}
+{% block meta_description %}Browse {{ t_cat(category.slug, 'name') or category.name }} reviews on Verdictly. {{ category.description or 'Explore subcategories and read honest reviews from real users.' }}{% endblock %}
+{% block og_image %}{% if category.image_path %}<meta property="og:image" content="{{ url_for('static', filename=category.image_path, _external=True) }}">{% endif %}{% endblock %}
+
+{% block schema_json %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
+    {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div class="page-header-icon">{{ category.icon or '📦' }}</div>
   <div>
-    <h1>{{ category.name }}</h1>
+    <h1>{{ t_cat(category.slug, 'name') or category.name }}</h1>
     {% if category.description %}
-    <p class="page-desc">{{ category.description }}</p>
+    <p class="page-desc">{{ t_cat(category.slug, 'description') or category.description }}</p>
     {% endif %}
   </div>
 </div>
 
 {% if subcategories %}
 {% if category.slug == 'cars' %}
-<p class="category-hint">Click on a car brand to browse model reviews by year.</p>
+<p class="category-hint">{{ t('ui.hint_cars') }}</p>
 {% elif category.slug == 'drinks' %}
-<p class="category-hint">Click on a drink type to browse reviews.</p>
+<p class="category-hint">{{ t('ui.hint_drinks') }}</p>
 {% elif category.slug == 'movies' %}
-<p class="category-hint">Click on a collection to browse film reviews.</p>
+<p class="category-hint">{{ t('ui.hint_movies') }}</p>
+{% elif category.slug == 'animals' %}
+<p class="category-hint">{{ t('ui.hint_animals') }}</p>
+{% elif category.slug == 'sports' %}
+<p class="category-hint">{{ t('ui.hint_sports') }}</p>
+{% elif category.slug == 'countries' %}
+<p class="category-hint">{{ t('ui.hint_countries') }}</p>
+{% elif category.slug == 'plants' %}
+<p class="category-hint">{{ t('ui.hint_plants') }}</p>
+{% elif category.slug == 'food' %}
+<p class="category-hint">{{ t('ui.hint_food') }}</p>
 {% else %}
-<p class="category-hint">Click on an animal type to browse breed reviews.</p>
+<p class="category-hint">{{ t('ui.hint_default') }}</p>
 {% endif %}
 <div class="subjects-grid">
   {% for subcat in subcategories %}
@@ -33,26 +58,28 @@
   <a href="{{ url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcat.slug) }}" class="subject-card">
     {% if subcat.image_path %}
     <div class="subject-img-wrap">
-      <img src="{{ url_for('static', filename=subcat.image_path) }}" alt="{{ subcat.name }}" loading="lazy">
+      <img src="{{ url_for('static', filename=subcat.image_path) }}" alt="{{ t_subcat(subcat.slug, 'name') or subcat.name }}" loading="lazy">
     </div>
     {% else %}
-    <div class="subject-img-placeholder">{% if category.slug == 'cars' %}🚗{% elif category.slug == 'movies' %}🎬{% else %}🐾{% endif %}</div>
+    <div class="subject-img-placeholder">{% if category.slug == 'cars' %}🚗{% elif category.slug == 'movies' %}🎬{% elif category.slug == 'sports' %}⚽{% elif category.slug == 'countries' %}🌍{% elif category.slug == 'plants' %}🌿{% elif category.slug == 'food' %}🍽️{% elif category.slug == 'drinks' %}🥤{% else %}🐾{% endif %}</div>
     {% endif %}
     <div class="subject-card-body">
-      <h3 class="subject-name">{{ subcat.name }}</h3>
+      <h3 class="subject-name">{{ t_subcat(subcat.slug, 'name') or subcat.name }}</h3>
       <div class="subcat-meta">
         {% if category.slug == 'cars' %}
-        <span class="review-count">{{ subcat.subjects.count() }} models</span>
+        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_models') }}</span>
         {% elif category.slug == 'movies' %}
-        <span class="review-count">{{ subcat.subjects.count() }} films</span>
-        {% elif category.slug in ('drinks', 'sports', 'countries', 'plants', 'food') %}
-        <span class="review-count">{{ subcat.subjects.count() }} types</span>
+        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_titles') }}</span>
+        {% elif category.slug in ('drinks', 'sports', 'plants', 'food') %}
+        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_types') }}</span>
+        {% elif category.slug == 'countries' %}
+        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_countries') }}</span>
         {% else %}
-        <span class="review-count">{{ subcat.subjects.count() }} breeds</span>
+        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_breeds') }}</span>
         {% endif %}
         {% if stats.review_count %}
         <span class="subcat-sep">·</span>
-        <span class="review-count">{{ stats.review_count }} reviews</span>
+        <span class="review-count">{{ stats.review_count }} {{ t('ui.reviews') }}</span>
         {% endif %}
         {% if stats.avg_rating %}
         <span class="subcat-sep">·</span>
@@ -82,6 +109,6 @@
   {% endfor %}
 </div>
 {% else %}
-<p class="empty-state">No subcategories found.</p>
+<p class="empty-state">{{ t('ui.no_subcategories') }}</p>
 {% endif %}
 {% endblock %}

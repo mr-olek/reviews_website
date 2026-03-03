@@ -1,0 +1,32 @@
+# Verdictly
+
+> Honest, community-powered reviews on everything — pets, movies, food, cars, sports, and more.
+
+Verdictly is a review aggregator and community platform where real users share genuine experiences. Every review includes a star rating, personal narrative, and community discussion thread. Content spans thousands of subjects across multiple categories.
+
+## Browse by Category
+{% for cat in categories %}
+- [{{ cat.name }}]({{ base_url }}/{{ cat.slug }}/): {{ cat.description or 'Browse reviews for ' + cat.name }}
+{% endfor %}
+
+## What You'll Find
+
+- **Animal reviews**: Detailed experiences from pet owners covering temperament, care needs, costs, health, and suitability for families — covering dogs, cats, rabbits, parrots, reptiles, and more.
+- **Movie reviews**: Audience opinions on Marvel, DC, animated films, anime series, TV shows, and classic cinema.
+- **Food reviews**: Real opinions on world cuisines — Italian, Japanese, Mexican, Ukrainian, and 60+ more.
+- **Car reviews**: Owner experiences by make, model, and year.
+- **Sports reviews**: Fan takes on teams, athletes, and events.
+
+## Data
+
+- Reviews are written by real users or aggregated from public review platforms.
+- Each subject shows an aggregate star rating (1–5) and total review count.
+- Users can submit new reviews directly on any subject page.
+
+## Sitemap
+
+Full content index: {{ base_url }}/sitemap.xml
+
+## Contact
+
+Verdictly — {{ base_url }}

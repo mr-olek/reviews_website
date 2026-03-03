@@ -13,7 +13,8 @@ class Config:
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-6')
     HF_API_KEY = os.environ.get('HF_API_KEY', '')
 
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'pandora')
 
     SCRAPE_DELAY = float(os.environ.get('SCRAPE_DELAY', '2.0'))
     MAX_REVIEWS_PER_SCRAPE = int(os.environ.get('MAX_REVIEWS_PER_SCRAPE', '20'))

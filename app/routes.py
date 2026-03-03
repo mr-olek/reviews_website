@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
+import json
 import random
-import uuid
 
 _ADJECTIVES = [
     'Big', 'Tiny', 'Blue', 'Red', 'Happy', 'Grumpy', 'Sneaky', 'Fluffy',
@@ -19,15 +18,83 @@ def _random_username() -> str:
     return f"{random.choice(_ADJECTIVES)}{random.choice(_ANIMALS)}{random.randint(1, 999)}"
 
 from flask import (
-    Blueprint, current_app, redirect,
+    Blueprint, current_app, make_response, redirect, session,
     render_template, request, url_for,
 )
-from werkzeug.utils import secure_filename
-
 from . import db
 from .models import Category, Review, ReviewReply, Subject, SubCategory
+from .utils import save_upload
 
 main = Blueprint('main', __name__)
+
+
+def _ensure_translations(objects, lang: str, fields: list[str]) -> None:
+    """
+    For any object missing a translation for `lang`, batch-translate `fields`
+    via Claude and persist results to the `translations` JSON column.
+    Silently skips if no API key is configured or if translation fails.
+    """
+    if lang == 'en':
+        return
+    api_key = current_app.config.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return
+
+    missing = []
+    for obj in objects:
+        try:
+            trans = json.loads(obj.translations or '{}')
+        except Exception:
+            trans = {}
+        if not trans.get(lang):
+            missing.append(obj)
+
+    if not missing:
+        return
+
+    from .processor import translate_texts_batch, translate_with_google
+    items = [
+        {'id': obj.id, **{f: getattr(obj, f, '') or '' for f in fields}}
+        for obj in missing
+    ]
+
+    results = {}
+    # Try Claude first (if credits are available)
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=api_key)
+        results = translate_texts_batch(items, lang, fields, client)
+    except Exception as e:
+        current_app.logger.warning(f"Claude translation failed ({lang}): {e}")
+
+    # Fall back to Google Translate (free, no key needed)
+    if not results:
+        try:
+            results = translate_with_google(items, lang, fields)
+        except Exception as e:
+            current_app.logger.warning(f"Google translation also failed ({lang}): {e}")
+
+    if results:
+        for obj in missing:
+            if obj.id in results:
+                try:
+                    trans = json.loads(obj.translations or '{}')
+                except Exception:
+                    trans = {}
+                trans[lang] = results[obj.id]
+                obj.translations = json.dumps(trans, ensure_ascii=False)
+        try:
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f"Failed to save translations: {e}")
+
+
+@main.route('/lang/<code>')
+def set_lang(code):
+    from .i18n import LANGUAGES
+    if code in LANGUAGES:
+        session['lang'] = code
+    return redirect(request.referrer or url_for('main.index'))
 
 
 @main.before_request
@@ -98,23 +165,6 @@ def category(category_slug):
     return render_template('category.html', category=cat, subcategories=subcats, subcat_stats=subcat_stats)
 
 
-def _allowed_file(filename: str) -> bool:
-    allowed = current_app.config.get('ALLOWED_EXTENSIONS', {'jpg', 'jpeg', 'png', 'gif', 'webp'})
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed
-
-
-def _save_upload(file, subfolder: str) -> str | None:
-    """Save an uploaded file, return relative path like 'images/uploads/reviews/abc.jpg'."""
-    if not file or not file.filename:
-        return None
-    if not _allowed_file(file.filename):
-        return None
-    ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    upload_dir = os.path.join(current_app.config['UPLOADS_DIR'], subfolder)
-    os.makedirs(upload_dir, exist_ok=True)
-    file.save(os.path.join(upload_dir, filename))
-    return f"images/uploads/{subfolder}/{filename}"
 
 
 @main.route('/<category_slug>/<subcategory_slug>/')
@@ -174,7 +224,7 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
                                pagination=pagination, form_errors=errors,
                                form_data=request.form)
 
-    image_path = _save_upload(request.files.get('image'), 'reviews')
+    image_path = save_upload(request.files.get('image'), 'reviews')
 
     review = Review(
         subject_id=subj.id,
@@ -221,6 +271,11 @@ def post_reply(category_slug, subcategory_slug, subject_slug, review_id):
     parent_id = request.form.get('parent_id', type=int)
 
     if author and body:
+        # Cap nesting at 2 levels: flatten deeper replies to the top-level parent
+        if parent_id:
+            parent = ReviewReply.query.get(parent_id)
+            if parent and parent.parent_id is not None:
+                parent_id = parent.parent_id
         reply = ReviewReply(
             review_id=rev.id,
             parent_id=parent_id or None,
@@ -233,3 +288,75 @@ def post_reply(category_slug, subcategory_slug, subject_slug, review_id):
     return redirect(url_for('main.review', category_slug=category_slug,
                             subcategory_slug=subcategory_slug,
                             subject_slug=subject_slug, review_id=review_id) + '#replies')
+
+
+# ---------------------------------------------------------------------------
+# SEO / discoverability routes
+# ---------------------------------------------------------------------------
+
+@main.route('/sitemap.xml')
+def sitemap():
+    base = request.host_url.rstrip('/')
+    pages = [{'loc': base + '/', 'changefreq': 'daily', 'priority': '1.0', 'lastmod': None}]
+
+    categories = Category.query.all()
+    cat_dict = {c.id: c for c in categories}
+    subcats = SubCategory.query.all()
+    subcat_dict = {s.id: s for s in subcats}
+
+    for cat in categories:
+        pages.append({'loc': base + url_for('main.category', category_slug=cat.slug),
+                      'changefreq': 'weekly', 'priority': '0.9', 'lastmod': None})
+
+    for sc in subcats:
+        cat = cat_dict.get(sc.category_id)
+        if not cat:
+            continue
+        pages.append({'loc': base + url_for('main.subcategory', category_slug=cat.slug, subcategory_slug=sc.slug),
+                      'changefreq': 'weekly', 'priority': '0.8', 'lastmod': None})
+
+    subjects = Subject.query.all()
+    subj_dict = {s.id: s for s in subjects}
+    for subj in subjects:
+        sc = subcat_dict.get(subj.subcategory_id)
+        cat = cat_dict.get(sc.category_id) if sc else None
+        if not sc or not cat:
+            continue
+        pages.append({'loc': base + url_for('main.subject', category_slug=cat.slug,
+                                            subcategory_slug=sc.slug, subject_slug=subj.slug),
+                      'changefreq': 'daily', 'priority': '0.7', 'lastmod': None})
+
+    rows = (db.session.query(Review.id, Review.subject_id, Review.created_at)
+            .filter_by(is_published=True).all())
+    for row in rows:
+        subj = subj_dict.get(row.subject_id)
+        sc = subcat_dict.get(subj.subcategory_id) if subj else None
+        cat = cat_dict.get(sc.category_id) if sc else None
+        if not subj or not sc or not cat:
+            continue
+        pages.append({'loc': base + url_for('main.review', category_slug=cat.slug,
+                                            subcategory_slug=sc.slug, subject_slug=subj.slug,
+                                            review_id=row.id),
+                      'changefreq': 'monthly', 'priority': '0.5',
+                      'lastmod': row.created_at.strftime('%Y-%m-%d') if row.created_at else None})
+
+    resp = make_response(render_template('sitemap.xml', pages=pages))
+    resp.headers['Content-Type'] = 'application/xml; charset=utf-8'
+    return resp
+
+
+@main.route('/robots.txt')
+def robots():
+    base = request.host_url.rstrip('/')
+    resp = make_response(render_template('robots.txt', base_url=base))
+    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return resp
+
+
+@main.route('/llms.txt')
+def llms():
+    base = request.host_url.rstrip('/')
+    categories = Category.query.order_by(Category.name).all()
+    resp = make_response(render_template('llms.txt', categories=categories, base_url=base))
+    resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+    return resp

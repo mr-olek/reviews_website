@@ -1,11 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_lang }}">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>{% block title %}Verdictly - Honest Reviews on Everything{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Real, honest reviews on pets, food, cars, movies, sports, and more.{% endblock %}">
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Verdictly">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:description" content="{{ self.meta_description() }}">
+  {% block og_image %}{% endblock %}
+  <link rel="canonical" href="{{ request.url }}">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.title() }}">
+  <meta name="twitter:description" content="{{ self.meta_description() }}">
+  {% block twitter_image %}{% endblock %}
+  {% block schema_json %}{% endblock %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -16,11 +36,25 @@
         <span class="logo-text">Verdictly</span>
       </a>
       <nav class="main-nav" id="main-nav">
-        <a href="{{ url_for('main.index') }}">Home</a>
-        {% for cat in nav_categories %}
-        <a href="{{ url_for('main.category', category_slug=cat.slug) }}">{{ cat.name }}</a>
-        {% endfor %}
+        <a href="{{ url_for('main.index') }}" class="nav-link">{{ t('ui.home') }}</a>
+        <div class="nav-dropdown" id="nav-dropdown">
+          <button class="nav-dropdown-btn" id="nav-dropdown-btn" aria-expanded="false" aria-haspopup="true">
+            Browse <span class="nav-dropdown-arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="nav-dropdown-menu" id="nav-dropdown-menu">
+            {% for cat in nav_categories %}
+            <a href="{{ url_for('main.category', category_slug=cat.slug) }}">{{ t_cat(cat.slug, 'name') or cat.name }}</a>
+            {% endfor %}
+          </div>
+        </div>
       </nav>
+      <div class="lang-switcher">
+        {% for code, info in LANGUAGES.items() %}
+        <a href="{{ url_for('main.set_lang', code=code) }}"
+           class="lang-btn {% if current_lang == code %}lang-btn--active{% endif %}"
+           title="{{ info.name }}">{{ info.flag }}</a>
+        {% endfor %}
+      </div>
       <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false">
         <span class="nav-toggle-icon">&#9776;</span>
       </button>
@@ -31,7 +65,7 @@
   <div class="breadcrumb-bar">
     <div class="container">
       <nav class="breadcrumbs" aria-label="breadcrumb">
-        <a href="{{ url_for('main.index') }}">Home</a>
+        <a href="{{ url_for('main.index') }}">{{ t('ui.home') }}</a>
         {% for crumb in breadcrumbs %}
           <span class="sep">›</span>
           {% if crumb.url %}
@@ -53,7 +87,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; 2026 Verdictly. Real reviews on everything.</p>
+      <p>&copy; 2026 Verdictly. {{ t('ui.footer') }}</p>
     </div>
   </footer>
   <script>
@@ -73,6 +107,23 @@
           toggle.querySelector('.nav-toggle-icon').innerHTML = '&#9776;';
         });
       });
+
+      // Browse dropdown (desktop)
+      var dropBtn  = document.getElementById('nav-dropdown-btn');
+      var dropMenu = document.getElementById('nav-dropdown-menu');
+      if (dropBtn && dropMenu) {
+        dropBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var open = dropMenu.classList.toggle('open');
+          dropBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          dropBtn.classList.toggle('active', open);
+        });
+        document.addEventListener('click', function(){
+          dropMenu.classList.remove('open');
+          dropBtn.setAttribute('aria-expanded', 'false');
+          dropBtn.classList.remove('active');
+        });
+      }
     })();
   </script>
 </body>

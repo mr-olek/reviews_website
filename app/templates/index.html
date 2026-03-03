@@ -1,59 +1,83 @@
 {% extends "base.html" %}
 
 {% block title %}Verdictly - Honest Reviews on Everything{% endblock %}
+{% block meta_description %}Verdictly — real, honest reviews on pets, food, cars, movies, sports, and more. {{ total_reviews }} reviews across {{ total_subjects }} topics. Join the community.{% endblock %}
+
+{% block schema_json %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.host_url }}#website",
+      "name": "Verdictly",
+      "description": "Real, honest reviews on pets, food, cars, movies, sports, and more.",
+      "url": "{{ request.host_url }}"
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ request.host_url }}#organization",
+      "name": "Verdictly",
+      "url": "{{ request.host_url }}"
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div class="hero-inner">
-    <p class="hero-eyebrow">Trusted by readers worldwide</p>
-    <h1>Real Reviews on <span class="hero-accent">Everything</span></h1>
-    <p class="hero-sub">The definitive source for honest reviews on pets, food, cars, plants, drinks, sports, countries, and everything in between.</p>
+    <p class="hero-eyebrow">{{ t('ui.trusted_by') }}</p>
+    <h1>{{ t('ui.hero_title') }} <span class="hero-accent">{{ t('ui.hero_accent') }}</span></h1>
+    <p class="hero-sub">{{ t('ui.hero_sub') }}</p>
     <div class="hero-stats">
       <div class="hero-stat">
         <span class="hero-stat-num">{{ total_reviews | default(0) }}</span>
-        <span class="hero-stat-label">Reviews</span>
+        <span class="hero-stat-label">{{ t('ui.reviews_stat') }}</span>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
         <span class="hero-stat-num">{{ categories | length }}</span>
-        <span class="hero-stat-label">Categories</span>
+        <span class="hero-stat-label">{{ t('ui.categories_stat') }}</span>
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
         <span class="hero-stat-num">{{ total_subjects | default(0) }}</span>
-        <span class="hero-stat-label">Topics</span>
+        <span class="hero-stat-label">{{ t('ui.topics_stat') }}</span>
       </div>
     </div>
   </div>
 </section>
 
 <section class="categories-section">
-  <h2 class="section-title">Browse Categories</h2>
+  <h2 class="section-title">{{ t('ui.browse_categories') }}</h2>
   {% if categories %}
   <div class="categories-grid">
     {% for cat in categories %}
     <a href="{{ url_for('main.category', category_slug=cat.slug) }}" class="category-card {% if cat.image_path %}category-card--img{% endif %}">
       {% if cat.image_path %}
       <div class="category-img-wrap">
-        <img src="{{ url_for('static', filename=cat.image_path) }}" alt="{{ cat.name }}" loading="lazy">
+        <img src="{{ url_for('static', filename=cat.image_path) }}" alt="{{ t_cat(cat.slug, 'name') or cat.name }}" loading="lazy">
       </div>
       <div class="category-card-body">
       {% else %}
       <div class="category-icon">{{ cat.icon or '📦' }}</div>
       {% endif %}
-      <h3 class="category-name">{{ cat.name }}</h3>
+      <h3 class="category-name">{{ t_cat(cat.slug, 'name') or cat.name }}</h3>
       {% if cat.description %}
-      <p class="category-desc">{{ cat.description }}</p>
+      <p class="category-desc">{{ t_cat(cat.slug, 'description') or cat.description }}</p>
       {% endif %}
       <span class="category-count">
-        {{ cat.subcategories.count() }} subcategories · {{ cat_review_counts[cat.id] }} reviews
+        {{ cat.subcategories.count() }} {{ t('ui.subcategories') }} · {{ cat_review_counts[cat.id] }} {{ t('ui.reviews') }}
       </span>
       {% if cat.image_path %}</div>{% endif %}
     </a>
     {% endfor %}
   </div>
   {% else %}
-  <p class="empty-state">No categories yet. Run <code>python seed.py</code> to get started.</p>
+  <p class="empty-state">{{ t('ui.no_category') }}</p>
   {% endif %}
 </section>
 {% endblock %}

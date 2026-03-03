@@ -17,10 +17,21 @@ def create_app(config_name='default'):
     from .admin import admin_bp
     app.register_blueprint(admin_bp)
 
+    from .i18n import load_translations, t, t_cat, t_subcat, get_lang, get_trans, LANGUAGES
+    load_translations(app)
+
     @app.context_processor
-    def inject_nav_categories():
+    def inject_globals():
         from .models import Category
-        return {'nav_categories': Category.query.order_by(Category.name).all()}
+        return {
+            'nav_categories': Category.query.order_by(Category.name).all(),
+            't': t,
+            't_cat': t_cat,
+            't_subcat': t_subcat,
+            'get_trans': get_trans,
+            'current_lang': get_lang(),
+            'LANGUAGES': LANGUAGES,
+        }
 
     with app.app_context():
         db.create_all()
@@ -49,6 +60,13 @@ def _migrate(db):
             body TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )""",
+        "ALTER TABLE reviews ADD COLUMN translations TEXT",
+        "ALTER TABLE subjects ADD COLUMN translations TEXT",
+        "ALTER TABLE subcategories ADD COLUMN translations TEXT",
+        "ALTER TABLE categories ADD COLUMN translations TEXT",
+        "CREATE INDEX IF NOT EXISTS ix_reviews_subject_id ON reviews (subject_id)",
+        "CREATE INDEX IF NOT EXISTS ix_reviews_is_published ON reviews (is_published)",
+        "CREATE INDEX IF NOT EXISTS ix_reviews_created_at ON reviews (created_at)",
     ]
     with db.engine.connect() as conn:
         for sql in migrations:

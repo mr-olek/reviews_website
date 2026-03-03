@@ -1,23 +1,39 @@
 {% extends "base.html" %}
 
 {% set breadcrumbs = [
-  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
-  {'label': subcategory.name, 'url': None}
+  {'label': t_cat(category.slug, 'name') or category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': t_subcat(subcategory.slug, 'name') or subcategory.name, 'url': None}
 ] %}
 
-{% block title %}{{ subcategory.name }} Reviews - Verdictly{% endblock %}
+{% block title %}{{ t_subcat(subcategory.slug, 'name') or subcategory.name }} Reviews - Verdictly{% endblock %}
+{% block meta_description %}Read {{ t_subcat(subcategory.slug, 'name') or subcategory.name }} reviews on Verdictly. {{ subcategory.description or 'Real opinions from owners and enthusiasts.' }}{% endblock %}
+{% block og_image %}{% if subcategory.image_path %}<meta property="og:image" content="{{ url_for('static', filename=subcategory.image_path, _external=True) }}">{% endif %}{% endblock %}
+
+{% block schema_json %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
+    {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}, "item": {{ url_for('main.category', category_slug=category.slug, _external=True) | tojson }}},
+    {"@type": "ListItem", "position": 3, "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }}}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
   {% if subcategory.image_path %}
   <div class="page-header-img">
-    <img src="{{ url_for('static', filename=subcategory.image_path) }}" alt="{{ subcategory.name }}">
+    <img src="{{ url_for('static', filename=subcategory.image_path) }}" alt="{{ t_subcat(subcategory.slug, 'name') or subcategory.name }}">
   </div>
   {% else %}
   <div class="page-header-icon">{{ category.icon or '📦' }}</div>
   {% endif %}
   <div>
-    <h1>{{ subcategory.name }}</h1>
+    <h1>{{ t_subcat(subcategory.slug, 'name') or subcategory.name }}</h1>
     {% if subcategory.description %}
     <p class="page-desc">{{ subcategory.description }}</p>
     {% endif %}
@@ -35,7 +51,7 @@
       <img src="{{ url_for('static', filename=subj.image_path) }}" alt="{{ subj.name }}" loading="lazy">
     </div>
     {% else %}
-    <div class="subject-img-placeholder">{{ '🚗' if has_year else '🐾' }}</div>
+    <div class="subject-img-placeholder">{% if has_year %}🚗{% elif category.slug == 'movies' %}🎬{% elif category.slug == 'sports' %}⚽{% elif category.slug == 'countries' %}🌍{% elif category.slug == 'plants' %}🌿{% elif category.slug == 'food' %}🍽️{% elif category.slug == 'drinks' %}🥤{% else %}🐾{% endif %}</div>
     {% endif %}
     <div class="subject-card-body">
       {% if has_year %}
@@ -48,16 +64,16 @@
       <div class="subject-meta">
         <span class="stars">{{ '★' * subj.avg_rating|int }}{{ '☆' * (5 - subj.avg_rating|int) }}</span>
         <span class="rating-num">{{ "%.1f"|format(subj.avg_rating) }}</span>
-        <span class="review-count">({{ subj.review_count }} reviews)</span>
+        <span class="review-count">({{ subj.review_count }} {{ t('ui.reviews') }})</span>
       </div>
       {% else %}
-      <span class="no-reviews">No reviews yet</span>
+      <span class="no-reviews">{{ t('ui.no_reviews_yet') }} {{ subj.name }}</span>
       {% endif %}
     </div>
   </a>
   {% endfor %}
 </div>
 {% else %}
-<p class="empty-state">No entries yet in {{ subcategory.name }}.</p>
+<p class="empty-state">{{ t('ui.no_entries') }} {{ t_subcat(subcategory.slug, 'name') or subcategory.name }}.</p>
 {% endif %}
 {% endblock %}

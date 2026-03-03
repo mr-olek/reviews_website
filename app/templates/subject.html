@@ -1,12 +1,47 @@
 {% extends "base.html" %}
 
 {% set breadcrumbs = [
-  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
-  {'label': subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
+  {'label': t_cat(category.slug, 'name') or category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': t_subcat(subcategory.slug, 'name') or subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
   {'label': subject.name, 'url': None}
 ] %}
 
-{% block title %}{{ subject.name }} Reviews - Verdictly{% endblock %}
+{% block title %}{{ subject.name }} Reviews{% if subject.review_count > 0 %} — ★{{ "%.1f"|format(subject.avg_rating) }} ({{ subject.review_count }} reviews){% endif %} - Verdictly{% endblock %}
+{% block meta_description %}{{ subject.description[:160] if subject.description else 'Read ' + (subject.review_count|string) + ' reviews for ' + subject.name + ' on Verdictly.' }}{% endblock %}
+{% block og_image %}{% if subject.image_path %}<meta property="og:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
+{% block twitter_image %}{% if subject.image_path %}<meta name="twitter:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
+
+{% block schema_json %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}, "item": {{ url_for('main.category', category_slug=category.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 3, "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }}, "item": {{ url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 4, "name": {{ subject.name | tojson }}}
+      ]
+    }{% if subject.review_count > 0 %},
+    {
+      "@type": "Product",
+      "name": {{ subject.name | tojson }},
+      {% if subject.description %}"description": {{ subject.description[:500] | tojson }},{% endif %}
+      {% if subject.image_path %}"image": {{ url_for('static', filename=subject.image_path, _external=True) | tojson }},{% endif %}
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{ '%.1f' | format(subject.avg_rating) }}",
+        "reviewCount": {{ subject.review_count }},
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }{% endif %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="subject-header">
@@ -18,7 +53,7 @@
     {% endif %}
   </div>
   <div class="subject-header-info">
-    <div class="subcat-label">{{ subject.subcategory.name }}</div>
+    <div class="subcat-label">{{ t_subcat(subcategory.slug, 'name') or subject.subcategory.name }}</div>
     <h1>{{ subject.name }}</h1>
     {% if subject.review_count > 0 %}
     <div class="rating-summary">
@@ -35,11 +70,11 @@
             {% endif %}
           {% endfor %}
         </div>
-        <div class="review-count-label">{{ subject.review_count }} reviews</div>
+        <div class="review-count-label">{{ subject.review_count }} {{ t('ui.reviews') }}</div>
       </div>
     </div>
     {% endif %}
-    <a href="#write-review" class="btn-primary write-review-btn">✏️ Write a Review</a>
+    <a href="#write-review" class="btn-primary write-review-btn">✏️ {{ t('ui.write_review') }}</a>
   </div>
 </div>
 
@@ -52,7 +87,7 @@
   <div class="pros-cons-grid">
     {% if subject.pros %}
     <div class="pros-card">
-      <h3 class="pros-cons-heading pros-heading">Pros</h3>
+      <h3 class="pros-cons-heading pros-heading">{{ t('ui.pros') }}</h3>
       <ul class="pros-cons-list">
         {% for item in subject.pros.split('\n') %}{% if item.strip() %}
         <li>{{ item.strip() }}</li>
@@ -62,7 +97,7 @@
     {% endif %}
     {% if subject.cons %}
     <div class="cons-card">
-      <h3 class="pros-cons-heading cons-heading">Cons</h3>
+      <h3 class="pros-cons-heading cons-heading">{{ t('ui.cons') }}</h3>
       <ul class="pros-cons-list">
         {% for item in subject.cons.split('\n') %}{% if item.strip() %}
         <li>{{ item.strip() }}</li>
@@ -77,7 +112,7 @@
 
 <div class="reviews-section">
   <h2 class="section-title">
-    Reviews
+    {{ t('ui.reviews')|capitalize }}
     {% if pagination.total %}
     <span class="count-badge">{{ pagination.total }}</span>
     {% endif %}
@@ -91,9 +126,9 @@
         <div class="review-author-info">
           <div class="review-author-avatar">{{ review.author_name[0]|upper if review.author_name else 'A' }}</div>
           <div>
-            <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
+            <div class="review-author-name">{{ review.author_name or t('ui.anonymous') }}</div>
             <div class="review-meta">
-              {% if review.source_site == 'user' %}<span class="review-source">via verified owner</span>{% endif %}
+              {% if review.source_site == 'user' %}<span class="review-source">{{ t('ui.via_verified') }}</span>{% endif %}
               {% if review.original_date %}
               <span class="review-date">· {{ review.original_date.strftime('%b %d, %Y') }}</span>
               {% endif %}
@@ -114,7 +149,7 @@
       <img src="{{ url_for('static', filename=review.image_path) }}" alt="Review photo" class="review-card-img">
       {% endif %}
       <p class="review-excerpt">{{ review.body[:300] }}{% if review.body|length > 300 %}…{% endif %}</p>
-      <a href="{{ url_for('main.review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}" class="read-more">Read full review →</a>
+      <a href="{{ url_for('main.review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}" class="read-more">{{ t('ui.read_full_review') }}</a>
     </article>
     {% endfor %}
   </div>
@@ -122,25 +157,25 @@
   {% if pagination.pages > 1 %}
   <nav class="pagination">
     {% if pagination.has_prev %}
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.prev_num) }}" class="page-btn">← Previous</a>
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.prev_num) }}" class="page-btn">{{ t('ui.previous') }}</a>
     {% endif %}
-    <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    <span class="page-info">{{ t('ui.page_of', page=pagination.page, pages=pagination.pages) }}</span>
     {% if pagination.has_next %}
-    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.next_num) }}" class="page-btn">Next →</a>
+    <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, page=pagination.next_num) }}" class="page-btn">{{ t('ui.next') }}</a>
     {% endif %}
   </nav>
   {% endif %}
 
   {% else %}
   <div class="empty-reviews">
-    <p>No reviews yet for {{ subject.name }}. Be the first!</p>
+    <p>{{ t('ui.no_reviews_yet') }} {{ subject.name }}. {{ t('ui.be_first') }}</p>
   </div>
   {% endif %}
 </div>
 
 <!-- ── Write a Review ─────────────────────────────────────────── -->
 <div class="write-review-section" id="write-review">
-  <h2 class="section-title">Write a Review</h2>
+  <h2 class="section-title">{{ t('ui.write_review_heading') }}</h2>
 
   {% if form_errors %}
   <div class="form-errors">
@@ -152,7 +187,7 @@
         action="{{ url_for('main.submit_review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}">
 
     <div class="form-group">
-      <label class="form-label">Your rating <span class="required">*</span></label>
+      <label class="form-label">{{ t('ui.your_rating') }} <span class="required">*</span></label>
       <div class="star-picker" id="star-picker">
         {% for i in range(1, 6) %}
         <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
@@ -164,33 +199,33 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="review-title">Title <span class="required">*</span></label>
+      <label class="form-label" for="review-title">{{ t('ui.review_title_label') }} <span class="required">*</span></label>
       <input type="text" id="review-title" name="title" class="form-input"
-             placeholder="Summarize your experience in one line"
+             placeholder="{{ t('ui.title_placeholder') }}"
              value="{{ form_data.get('title', '') if form_data else '' }}" required maxlength="200">
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="review-body">Review <span class="required">*</span></label>
+      <label class="form-label" for="review-body">{{ t('ui.review_body_label') }} <span class="required">*</span></label>
       <textarea id="review-body" name="body" class="form-textarea" rows="6"
-                placeholder="Share your experience — what do you love? What should others know? How is training, grooming, health?" required minlength="20">{{ form_data.get('body', '') if form_data else '' }}</textarea>
+                placeholder="{{ t('ui.review_placeholder') }}" required minlength="20">{{ form_data.get('body', '') if form_data else '' }}</textarea>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label" for="review-author">Your name</label>
+        <label class="form-label" for="review-author">{{ t('ui.your_name_label') }}</label>
         <input type="text" id="review-author" name="author_name" class="form-input"
-               placeholder="e.g. Sarah M."
+               placeholder="{{ t('ui.name_placeholder') }}"
                value="{{ form_data.get('author_name', '') if form_data else '' }}" maxlength="100">
       </div>
       <div class="form-group">
-        <label class="form-label" for="review-image">Add a photo <span class="form-hint">(optional, max 10MB)</span></label>
+        <label class="form-label" for="review-image">{{ t('ui.add_photo_label') }} <span class="form-hint">{{ t('ui.photo_hint') }}</span></label>
         <input type="file" id="review-image" name="image" class="form-file" accept="image/*">
         <div class="image-preview" id="image-preview"></div>
       </div>
     </div>
 
-    <button type="submit" class="btn-primary btn-submit">Submit Review</button>
+    <button type="submit" class="btn-primary btn-submit">{{ t('ui.submit_review') }}</button>
   </form>
 </div>
 
@@ -198,6 +233,8 @@
 // Live image preview
 document.getElementById('review-image').addEventListener('change', function() {
   const preview = document.getElementById('image-preview');
+  const existing = preview.querySelector('img');
+  if (existing && existing.src.startsWith('blob:')) URL.revokeObjectURL(existing.src);
   preview.innerHTML = '';
   const file = this.files[0];
   if (!file) return;
@@ -205,6 +242,13 @@ document.getElementById('review-image').addEventListener('change', function() {
   img.src = URL.createObjectURL(file);
   img.onload = () => URL.revokeObjectURL(img.src);
   preview.appendChild(img);
+});
+
+// Disable submit button on click to prevent duplicate submissions
+document.querySelector('.review-form').addEventListener('submit', function() {
+  const btn = this.querySelector('[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
 });
 </script>
 {% endblock %}

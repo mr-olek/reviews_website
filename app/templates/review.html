@@ -1,13 +1,54 @@
 {% extends "base.html" %}
 
 {% set breadcrumbs = [
-  {'label': category.name, 'url': url_for('main.category', category_slug=category.slug)},
-  {'label': subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
+  {'label': t_cat(category.slug, 'name') or category.name, 'url': url_for('main.category', category_slug=category.slug)},
+  {'label': t_subcat(subcategory.slug, 'name') or subcategory.name, 'url': url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug)},
   {'label': subject.name, 'url': url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug)},
-  {'label': 'Review', 'url': None}
+  {'label': t('ui.review_breadcrumb'), 'url': None}
 ] %}
 
-{% block title %}{{ review.title }} - {{ subject.name }} Review - Verdictly{% endblock %}
+{% block title %}{{ review.title }} — {{ subject.name }} {{ review.rating }}/5 Review - Verdictly{% endblock %}
+{% block meta_description %}{{ review.body[:160] }}{% endblock %}
+{% block og_image %}{% if review.image_path %}<meta property="og:image" content="{{ url_for('static', filename=review.image_path, _external=True) }}">{% elif subject.image_path %}<meta property="og:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
+{% block twitter_image %}{% if review.image_path %}<meta name="twitter:image" content="{{ url_for('static', filename=review.image_path, _external=True) }}">{% elif subject.image_path %}<meta name="twitter:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
+
+{% block schema_json %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}, "item": {{ url_for('main.category', category_slug=category.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 3, "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }}, "item": {{ url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 4, "name": {{ subject.name | tojson }}, "item": {{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 5, "name": "Review"}
+      ]
+    },
+    {
+      "@type": "Review",
+      "name": {{ review.title | tojson }},
+      "reviewBody": {{ review.body[:1000] | tojson }},
+      "author": {"@type": "Person", "name": {{ (review.author_name or "Anonymous") | tojson }}},
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": {{ review.rating }},
+        "bestRating": 5,
+        "worstRating": 1
+      },
+      "itemReviewed": {
+        "@type": "Thing",
+        "name": {{ subject.name | tojson }}{% if subject.image_path %},
+        "image": {{ url_for('static', filename=subject.image_path, _external=True) | tojson }}{% endif %}
+      }{% if review.original_date %},
+      "datePublished": "{{ review.original_date.strftime('%Y-%m-%d') }}"{% endif %}
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <article class="review-full">
@@ -27,9 +68,9 @@
       <div class="review-author-info">
         <div class="review-author-avatar large">{{ review.author_name[0]|upper if review.author_name else 'A' }}</div>
         <div>
-          <div class="review-author-name">{{ review.author_name or 'Anonymous' }}</div>
+          <div class="review-author-name">{{ review.author_name or t('ui.anonymous') }}</div>
           <div class="review-meta-detail">
-            {% if review.source_site == 'user' %}<span>via verified owner</span>{% endif %}
+            {% if review.source_site == 'user' %}<span>{{ t('ui.via_verified') }}</span>{% endif %}
             {% if review.original_date %}
             <span>· {{ review.original_date.strftime('%B %d, %Y') }}</span>
             {% endif %}
@@ -42,7 +83,7 @@
             <span class="star {% if i <= review.rating %}filled{% else %}empty{% endif %}">★</span>
           {% endfor %}
         </div>
-        <div class="rating-label">{{ review.rating }} out of 5</div>
+        <div class="rating-label">{{ review.rating }} {{ t('ui.out_of_5') }}</div>
       </div>
     </div>
   </div>
@@ -63,7 +104,7 @@
 
   <div class="review-full-footer">
     <a href="{{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}" class="back-link">
-      ← Back to {{ subject.name }} reviews
+      ← {{ t('ui.back_to_reviews') }} {{ subject.name }}
     </a>
   </div>
 </article>
@@ -71,7 +112,7 @@
 <!-- Replies section -->
 <section class="replies-section" id="replies">
   <h2 class="replies-heading">
-    Responses
+    {{ t('ui.responses') }}
     {% if top_replies %}<span class="replies-count">{{ top_replies|length }}</span>{% endif %}
   </h2>
 
@@ -85,14 +126,14 @@
           <span class="reply-date">{{ reply.created_at.strftime('%b %d, %Y') }}</span>
         </div>
         <p class="reply-body">{{ reply.body }}</p>
-        <button class="reply-toggle-btn" onclick="toggleReplyForm('reply-form-{{ reply.id }}')">Reply</button>
+        <button class="reply-toggle-btn" onclick="toggleReplyForm('reply-form-{{ reply.id }}')">{{ t('ui.reply') }}</button>
         <form class="reply-form hidden" id="reply-form-{{ reply.id }}"
               action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
               method="post">
           <input type="hidden" name="parent_id" value="{{ reply.id }}">
-          <input class="reply-input" type="text" name="author_name" placeholder="Your name" required maxlength="100">
-          <textarea class="reply-input" name="body" placeholder="Write a reply…" required rows="2" maxlength="2000"></textarea>
-          <button type="submit" class="reply-submit-btn">Post reply</button>
+          <input class="reply-input" type="text" name="author_name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
+          <textarea class="reply-input" name="body" placeholder="{{ t('ui.reply_placeholder') }}" required rows="2" maxlength="2000"></textarea>
+          <button type="submit" class="reply-submit-btn">{{ t('ui.post_reply') }}</button>
         </form>
 
         {% set children = reply.children.all() %}
@@ -119,13 +160,13 @@
 
   <!-- New top-level reply form -->
   <div class="reply-new">
-    <h3 class="reply-new-heading">Leave a response</h3>
+    <h3 class="reply-new-heading">{{ t('ui.leave_response') }}</h3>
     <form class="reply-form reply-form--top"
           action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
           method="post">
-      <input class="reply-input" type="text" name="author_name" placeholder="Your name" required maxlength="100">
-      <textarea class="reply-input" name="body" placeholder="Share your thoughts on this review…" required rows="4" maxlength="2000"></textarea>
-      <button type="submit" class="btn-primary">Post response</button>
+      <input class="reply-input" type="text" name="author_name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
+      <textarea class="reply-input" name="body" placeholder="{{ t('ui.response_placeholder') }}" required rows="4" maxlength="2000"></textarea>
+      <button type="submit" class="btn-primary">{{ t('ui.post_response') }}</button>
     </form>
   </div>
 </section>

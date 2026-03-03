@@ -13,6 +13,7 @@ class Category(db.Model):
     image_path = db.Column(db.String(500))
 
     subcategories = db.relationship('SubCategory', backref='category', lazy='dynamic', cascade='all, delete-orphan')
+    translations = db.Column(db.Text)  # JSON: {lang: {field: value}}
 
     def __repr__(self):
         return f'<Category {self.name}>'
@@ -31,6 +32,7 @@ class SubCategory(db.Model):
     cons = db.Column(db.Text)
 
     subjects = db.relationship('Subject', backref='subcategory', lazy='dynamic', cascade='all, delete-orphan')
+    translations = db.Column(db.Text)  # JSON: {lang: {field: value}}
 
     __table_args__ = (db.UniqueConstraint('category_id', 'slug'),)
 
@@ -54,6 +56,7 @@ class Subject(db.Model):
 
     reviews = db.relationship('Review', backref='subject', lazy='dynamic', cascade='all, delete-orphan')
     scraper_jobs = db.relationship('ScraperJob', backref='subject', lazy='dynamic', cascade='all, delete-orphan')
+    translations = db.Column(db.Text)  # JSON: {lang: {field: value}}
 
     __table_args__ = (db.UniqueConstraint('subcategory_id', 'slug'),)
 
@@ -73,17 +76,18 @@ class Review(db.Model):
     __tablename__ = 'reviews'
 
     id = db.Column(db.Integer, primary_key=True)
-    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id'), nullable=False, index=True)
     title = db.Column(db.String(500), nullable=False)
     body = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer, nullable=False)  # 1-5
     author_name = db.Column(db.String(200))
     original_url = db.Column(db.String(1000), unique=True)
     source_site = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     original_date = db.Column(db.DateTime)
-    is_published = db.Column(db.Boolean, default=False)
+    is_published = db.Column(db.Boolean, default=False, index=True)
     image_path = db.Column(db.String(500))
+    translations = db.Column(db.Text)  # JSON: {lang: {title, body}}
 
     all_replies = db.relationship('ReviewReply', backref='review', lazy='dynamic',
                                   cascade='all, delete-orphan',
