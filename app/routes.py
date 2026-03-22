@@ -315,6 +315,11 @@ def post_reply(category_slug, subcategory_slug, subject_slug, review_id):
 # SEO / discoverability routes
 # ---------------------------------------------------------------------------
 
+@main.route('/go/youtube')
+def youtube_redirect():
+    return redirect('https://www.youtube.com/@Carpe_Diem_Travels/videos')
+
+
 @main.route('/sitemap.xml')
 def sitemap():
     base = request.host_url.rstrip('/')

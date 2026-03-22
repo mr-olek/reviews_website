@@ -103,7 +103,10 @@ def dashboard():
         'chart': [{'date': k, 'count': v} for k, v in day_counts.items()],
     }
 
-    return render_template('admin/dashboard.html', stats=stats, recent=recent, visit_stats=visit_stats)
+    yt_clicks = PageView.query.filter_by(path='/go/youtube').count()
+
+    return render_template('admin/dashboard.html', stats=stats, recent=recent,
+                           visit_stats=visit_stats, yt_clicks=yt_clicks)
 
 
 # ---------------------------------------------------------------------------
