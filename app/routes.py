@@ -103,6 +103,31 @@ def _page_cache_key():
     return f'page:{request.path}:{qs}:{lang}'
 
 
+_BOT_KEYWORDS = (
+    'bot', 'crawl', 'spider', 'slurp', 'scraper', 'fetch', 'scan',
+    'check', 'monitor', 'pingdom', 'uptimerobot', 'statuscake',
+    'python-requests', 'python-urllib', 'java/', 'curl/', 'wget/',
+    'headless', 'phantomjs', 'selenium', 'puppeteer', 'playwright',
+    'gptbot', 'claudebot', 'google-extended', 'anthropic-ai',
+    'oai-searchbot', 'chatgpt-user', 'meta-externalagent',
+    'facebookexternalhit', 'facebookbot', 'twitterbot', 'linkedinbot',
+    'discordbot', 'slackbot', 'telegrambot', 'whatsapp',
+    'applebot', 'amazonbot', 'perplexitybot', 'ccbot', 'diffbot',
+    'bytespider', 'cohere-ai', 'ia_archiver', 'archive.org',
+    'ahrefsbot', 'semrushbot', 'mj12bot', 'dotbot', 'rogerbot',
+    'bingbot', 'googlebot', 'yandexbot', 'baiduspider', 'duckduckbot',
+    'seznambot', 'exabot', 'sogou', '360spider', 'proximic',
+    'nmap', 'masscan', 'nuclei', 'zgrab', 'shodan',
+)
+
+
+def _is_bot(ua: str) -> bool:
+    if not ua:
+        return True
+    ua_lower = ua.lower()
+    return any(kw in ua_lower for kw in _BOT_KEYWORDS)
+
+
 def _detect_device(ua: str) -> str:
     ua = ua.lower()
     if 'ipad' in ua or 'tablet' in ua or ('android' in ua and 'mobile' not in ua):
@@ -114,13 +139,14 @@ def _detect_device(ua: str) -> str:
 
 @main.before_request
 def track_visit():
-    # Skip static files, admin, and bots to avoid unnecessary DB writes
     if (request.path.startswith('/static/')
             or request.path.startswith('/admin/')
             or request.path in ('/favicon.ico', '/robots.txt', '/sitemap.xml', '/llms.txt')):
         return
-    from .models import PageView
     ua = request.headers.get('User-Agent', '')
+    if _is_bot(ua):
+        return
+    from .models import PageView
     db.session.add(PageView(
         path=request.path,
         ip_address=request.remote_addr,
