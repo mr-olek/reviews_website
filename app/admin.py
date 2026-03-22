@@ -109,14 +109,14 @@ def dashboard():
     _enrich_countries()
 
     # --- 14-day daily breakdown ---
-    from sqlalchemy import func, cast, Date as SADate
+    from sqlalchemy import func
     days_14 = [today - timedelta(days=i) for i in range(13, -1, -1)]
     start_14 = datetime(days_14[0].year, days_14[0].month, days_14[0].day)
 
-    # All page views in the window
+    # func.date() returns a plain string from SQLite — avoids fromisoformat issues
     rows_14 = (
         db.session.query(
-            cast(PageView.created_at, SADate).label('day'),
+            func.date(PageView.created_at).label('day'),
             PageView.country,
             PageView.device_type,
             func.count(PageView.id).label('cnt'),
@@ -131,7 +131,7 @@ def dashboard():
     day_agg = {d.isoformat(): {'total': 0, 'countries': defaultdict(int), 'devices': defaultdict(int)}
                for d in days_14}
     for row in rows_14:
-        key = row.day.isoformat() if hasattr(row.day, 'isoformat') else str(row.day)
+        key = str(row.day)
         if key not in day_agg:
             continue
         day_agg[key]['total'] += row.cnt
