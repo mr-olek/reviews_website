@@ -166,6 +166,60 @@ a:hover { text-decoration: underline; }
 .breadcrumbs .sep { color: var(--border); }
 .breadcrumbs .current { color: var(--text); font-weight: 500; }
 
+/* ---- YouTube promo banner ---- */
+.yt-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 0 0 40px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow .2s, transform .15s;
+  box-shadow: var(--shadow);
+}
+.yt-banner:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.yt-banner-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  background: #ff0000;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #fff;
+}
+.yt-banner-body { flex: 1; min-width: 0; }
+.yt-banner-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.yt-banner-sub {
+  font-size: .875rem;
+  color: var(--text-muted);
+}
+.yt-banner-cta {
+  flex-shrink: 0;
+  background: #ff0000;
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
 /* ---- Footer ---- */
 .site-footer {
   background: #fff;
@@ -175,6 +229,11 @@ a:hover { text-decoration: underline; }
   color: var(--text-muted);
   font-size: .875rem;
 }
+.site-footer a.yt-footer-link {
+  color: #ff0000;
+  font-weight: 500;
+}
+.site-footer a.yt-footer-link:hover { text-decoration: underline; }
 
 /* ---- Hero ---- */
 .hero {
@@ -882,6 +941,10 @@ a:hover { text-decoration: underline; }
   /* ---- Replies ---- */
   .replies-section { padding: 0; margin: 24px 0 40px; }
   .reply-card { padding: 12px; }
+
+  /* ---- YouTube banner mobile ---- */
+  .yt-banner { flex-wrap: wrap; gap: 14px; }
+  .yt-banner-cta { display: none; }
 
   /* ---- Footer safe area ---- */
   .site-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
