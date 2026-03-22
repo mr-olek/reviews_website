@@ -103,6 +103,15 @@ def _page_cache_key():
     return f'page:{request.path}:{qs}:{lang}'
 
 
+def _detect_device(ua: str) -> str:
+    ua = ua.lower()
+    if 'ipad' in ua or 'tablet' in ua or ('android' in ua and 'mobile' not in ua):
+        return 'tablet'
+    if 'mobile' in ua or 'iphone' in ua or 'android' in ua or 'ipod' in ua:
+        return 'mobile'
+    return 'desktop'
+
+
 @main.before_request
 def track_visit():
     # Skip static files, admin, and bots to avoid unnecessary DB writes
@@ -111,9 +120,11 @@ def track_visit():
             or request.path in ('/favicon.ico', '/robots.txt', '/sitemap.xml', '/llms.txt')):
         return
     from .models import PageView
+    ua = request.headers.get('User-Agent', '')
     db.session.add(PageView(
         path=request.path,
         ip_address=request.remote_addr,
+        device_type=_detect_device(ua),
     ))
     db.session.commit()
 

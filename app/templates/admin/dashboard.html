@@ -61,6 +61,58 @@
   </div>
 </div>
 
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px">
+
+  <!-- Top countries -->
+  <div class="chart-card">
+    <div class="chart-title">Top countries</div>
+    {% if top_countries %}
+    <table style="width:100%;font-size:.875rem;border-collapse:collapse">
+      {% set max_c = top_countries[0].count %}
+      {% for row in top_countries %}
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px 6px 0;width:40px;font-size:1.1rem">
+          {{ row.code if row.code == 'XX' else '' }}
+          {% if row.code != 'XX' %}<span title="{{ row.code }}">{{ row.code }}</span>{% endif %}
+        </td>
+        <td style="padding:6px 4px">
+          <div style="background:var(--primary);height:8px;border-radius:4px;width:{{ (row.count / max_c * 100)|int }}%;min-width:4px"></div>
+        </td>
+        <td style="padding:6px 0 6px 8px;color:var(--text-muted);text-align:right;white-space:nowrap">{{ row.count }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p style="color:var(--text-muted);font-size:.875rem;margin-top:12px">No data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Device breakdown -->
+  <div class="chart-card">
+    <div class="chart-title">Devices</div>
+    {% if device_stats %}
+    {% set total_d = device_stats | sum(attribute='count') %}
+    <table style="width:100%;font-size:.875rem;border-collapse:collapse">
+      {% for row in device_stats %}
+      {% set icon = '💻' if row.type == 'desktop' else ('📱' if row.type == 'mobile' else '📟') %}
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 8px 8px 0;white-space:nowrap">{{ icon }} {{ row.type | capitalize }}</td>
+        <td style="padding:8px 4px">
+          <div style="background:var(--accent);height:8px;border-radius:4px;width:{{ (row.count / total_d * 100)|int }}%;min-width:4px"></div>
+        </td>
+        <td style="padding:8px 0 8px 8px;color:var(--text-muted);text-align:right;white-space:nowrap">
+          {{ row.count }} ({{ (row.count / total_d * 100)|round(1) }}%)
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p style="color:var(--text-muted);font-size:.875rem;margin-top:12px">No data yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
 <h2 class="admin-section-title">Recent reviews</h2>
 <table class="admin-table">
   <thead>

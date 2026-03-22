@@ -105,8 +105,33 @@ def dashboard():
 
     yt_clicks = PageView.query.filter_by(path='/go/youtube').count()
 
+    # --- Country enrichment: batch-resolve IPs not yet geocoded ---
+    _enrich_countries()
+
+    # Top 10 countries
+    from sqlalchemy import func
+    country_rows = (
+        db.session.query(PageView.country, func.count(PageView.id).label('cnt'))
+        .filter(PageView.country.isnot(None))
+        .group_by(PageView.country)
+        .order_by(func.count(PageView.id).desc())
+        .limit(10).all()
+    )
+    top_countries = [{'code': r.country, 'count': r.cnt} for r in country_rows]
+
+    # Device breakdown
+    device_rows = (
+        db.session.query(PageView.device_type, func.count(PageView.id).label('cnt'))
+        .filter(PageView.device_type.isnot(None))
+        .group_by(PageView.device_type)
+        .order_by(func.count(PageView.id).desc())
+        .all()
+    )
+    device_stats = [{'type': r.device_type, 'count': r.cnt} for r in device_rows]
+
     return render_template('admin/dashboard.html', stats=stats, recent=recent,
-                           visit_stats=visit_stats, yt_clicks=yt_clicks)
+                           visit_stats=visit_stats, yt_clicks=yt_clicks,
+                           top_countries=top_countries, device_stats=device_stats)
 
 
 # ---------------------------------------------------------------------------
@@ -302,6 +327,67 @@ def delete_subcategory_image(subcat_id):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _enrich_countries():
+    """Batch-resolve country codes for PageViews with unknown IPs (max 100 at a time)."""
+    from .models import PageView
+    import requests as _requests
+
+    # Find up to 100 distinct IPs that haven't been geocoded yet
+    subq = (
+        db.session.query(PageView.ip_address)
+        .filter(PageView.country.is_(None), PageView.ip_address.isnot(None))
+        .distinct()
+        .limit(100)
+        .subquery()
+    )
+    unknown_ips = [row[0] for row in db.session.query(subq)]
+    if not unknown_ips:
+        return
+
+    # Skip private/loopback IPs
+    import ipaddress
+    public_ips = []
+    private_set = set()
+    for ip in unknown_ips:
+        try:
+            if ipaddress.ip_address(ip).is_private or ipaddress.ip_address(ip).is_loopback:
+                private_set.add(ip)
+            else:
+                public_ips.append(ip)
+        except ValueError:
+            private_set.add(ip)
+
+    # Mark private IPs so we don't retry them
+    if private_set:
+        db.session.query(PageView).filter(
+            PageView.ip_address.in_(private_set), PageView.country.is_(None)
+        ).update({'country': 'XX'}, synchronize_session=False)
+        db.session.commit()
+
+    if not public_ips:
+        return
+
+    try:
+        resp = _requests.post(
+            'http://ip-api.com/batch?fields=query,countryCode',
+            json=[{'query': ip} for ip in public_ips],
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return
+        ip_map = {item['query']: item.get('countryCode') for item in resp.json()}
+    except Exception as e:
+        logger.warning(f"IP geolocation batch failed: {e}")
+        return
+
+    for ip, code in ip_map.items():
+        if code:
+            db.session.query(PageView).filter(
+                PageView.ip_address == ip, PageView.country.is_(None)
+            ).update({'country': code}, synchronize_session=False)
+    db.session.commit()
+
 
 def _delete_file(relative_path: str | None):
     """Delete a file from static/ if it was user-uploaded."""

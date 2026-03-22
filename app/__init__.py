@@ -88,6 +88,8 @@ def _migrate(db):
         "CREATE INDEX IF NOT EXISTS ix_reviews_subject_id ON reviews (subject_id)",
         "CREATE INDEX IF NOT EXISTS ix_reviews_is_published ON reviews (is_published)",
         "CREATE INDEX IF NOT EXISTS ix_reviews_created_at ON reviews (created_at)",
+        "ALTER TABLE page_views ADD COLUMN country VARCHAR(2)",
+        "ALTER TABLE page_views ADD COLUMN device_type VARCHAR(10)",
     ]
     with db.engine.connect() as conn:
         for sql in migrations:

@@ -121,6 +121,8 @@ class PageView(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.String(500), nullable=False)
     ip_address = db.Column(db.String(45))
+    country = db.Column(db.String(2))       # ISO 2-letter code, filled lazily
+    device_type = db.Column(db.String(10))  # mobile / tablet / desktop
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def __repr__(self):
