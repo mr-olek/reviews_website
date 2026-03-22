@@ -108,6 +108,50 @@ def dashboard():
     # --- Country enrichment: batch-resolve IPs not yet geocoded ---
     _enrich_countries()
 
+    # --- 14-day daily breakdown ---
+    from sqlalchemy import func, cast, Date as SADate
+    days_14 = [today - timedelta(days=i) for i in range(13, -1, -1)]
+    start_14 = datetime(days_14[0].year, days_14[0].month, days_14[0].day)
+
+    # All page views in the window
+    rows_14 = (
+        db.session.query(
+            cast(PageView.created_at, SADate).label('day'),
+            PageView.country,
+            PageView.device_type,
+            func.count(PageView.id).label('cnt'),
+        )
+        .filter(PageView.created_at >= start_14)
+        .group_by('day', PageView.country, PageView.device_type)
+        .all()
+    )
+
+    # Aggregate per day
+    from collections import defaultdict
+    day_agg = {d.isoformat(): {'total': 0, 'countries': defaultdict(int), 'devices': defaultdict(int)}
+               for d in days_14}
+    for row in rows_14:
+        key = row.day.isoformat() if hasattr(row.day, 'isoformat') else str(row.day)
+        if key not in day_agg:
+            continue
+        day_agg[key]['total'] += row.cnt
+        if row.country:
+            day_agg[key]['countries'][row.country] += row.cnt
+        if row.device_type:
+            day_agg[key]['devices'][row.device_type] += row.cnt
+
+    daily_breakdown = []
+    for d in days_14:
+        agg = day_agg[d.isoformat()]
+        top_country = max(agg['countries'], key=agg['countries'].get) if agg['countries'] else '—'
+        top_device  = max(agg['devices'],  key=agg['devices'].get)  if agg['devices']  else '—'
+        daily_breakdown.append({
+            'date': d.isoformat(),
+            'total': agg['total'],
+            'country': top_country,
+            'device': top_device,
+        })
+
     # Top 10 countries
     from sqlalchemy import func
     country_rows = (
@@ -131,7 +175,8 @@ def dashboard():
 
     return render_template('admin/dashboard.html', stats=stats, recent=recent,
                            visit_stats=visit_stats, yt_clicks=yt_clicks,
-                           top_countries=top_countries, device_stats=device_stats)
+                           top_countries=top_countries, device_stats=device_stats,
+                           daily_breakdown=daily_breakdown)
 
 
 # ---------------------------------------------------------------------------

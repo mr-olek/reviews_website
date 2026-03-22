@@ -113,6 +113,40 @@
 
 </div>
 
+<h2 class="admin-section-title">Daily breakdown — last 14 days</h2>
+<table class="admin-table" style="margin-bottom:32px">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th style="text-align:right">Visits</th>
+      <th>Top country</th>
+      <th>Top device</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in daily_breakdown | reverse %}
+    <tr>
+      <td>{{ row.date }}</td>
+      <td style="text-align:right;font-weight:600">{{ row.total }}</td>
+      <td>
+        {% if row.country != '—' and row.country != 'XX' %}
+          {{ row.country }}
+        {% else %}
+          <span style="color:var(--text-muted)">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if row.device == 'desktop' %}💻 Desktop
+        {% elif row.device == 'mobile' %}📱 Mobile
+        {% elif row.device == 'tablet' %}📟 Tablet
+        {% else %}<span style="color:var(--text-muted)">—</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
 <h2 class="admin-section-title">Recent reviews</h2>
 <table class="admin-table">
   <thead>
