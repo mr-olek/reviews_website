@@ -333,35 +333,67 @@ def youtube_redirect():
 
 @main.route('/sitemap.xml')
 def sitemap():
+    from sqlalchemy import func
     base = request.host_url.rstrip('/')
-    pages = [{'loc': base + '/', 'changefreq': 'daily', 'priority': '1.0', 'lastmod': None}]
+
+    # Precompute most-recent published review date per subject/subcat/cat
+    latest_by_subj = dict(
+        db.session.query(Review.subject_id, func.max(Review.created_at))
+        .filter_by(is_published=True).group_by(Review.subject_id).all()
+    )
+
+    pages = [{'loc': base + '/', 'changefreq': 'daily', 'priority': '1.0',
+              'lastmod': max(latest_by_subj.values()).strftime('%Y-%m-%d') if latest_by_subj else None}]
 
     categories = Category.query.all()
     cat_dict = {c.id: c for c in categories}
     subcats = SubCategory.query.all()
     subcat_dict = {s.id: s for s in subcats}
+    subjects_all = Subject.query.all()
+
+    # latest date per subcat and cat
+    subcat_latest = {}
+    cat_latest = {}
+    for subj in subjects_all:
+        d = latest_by_subj.get(subj.id)
+        if d:
+            if d > subcat_latest.get(subj.subcategory_id, d):
+                subcat_latest[subj.subcategory_id] = d
+            else:
+                subcat_latest.setdefault(subj.subcategory_id, d)
+            sc = subcat_dict.get(subj.subcategory_id)
+            if sc:
+                if d > cat_latest.get(sc.category_id, d):
+                    cat_latest[sc.category_id] = d
+                else:
+                    cat_latest.setdefault(sc.category_id, d)
 
     for cat in categories:
+        lm = cat_latest.get(cat.id)
         pages.append({'loc': base + url_for('main.category', category_slug=cat.slug),
-                      'changefreq': 'weekly', 'priority': '0.9', 'lastmod': None})
+                      'changefreq': 'weekly', 'priority': '0.9',
+                      'lastmod': lm.strftime('%Y-%m-%d') if lm else None})
 
     for sc in subcats:
         cat = cat_dict.get(sc.category_id)
         if not cat:
             continue
+        lm = subcat_latest.get(sc.id)
         pages.append({'loc': base + url_for('main.subcategory', category_slug=cat.slug, subcategory_slug=sc.slug),
-                      'changefreq': 'weekly', 'priority': '0.8', 'lastmod': None})
+                      'changefreq': 'weekly', 'priority': '0.8',
+                      'lastmod': lm.strftime('%Y-%m-%d') if lm else None})
 
-    subjects = Subject.query.all()
-    subj_dict = {s.id: s for s in subjects}
-    for subj in subjects:
+    subj_dict = {s.id: s for s in subjects_all}
+    for subj in subjects_all:
         sc = subcat_dict.get(subj.subcategory_id)
         cat = cat_dict.get(sc.category_id) if sc else None
         if not sc or not cat:
             continue
+        lm = latest_by_subj.get(subj.id)
         pages.append({'loc': base + url_for('main.subject', category_slug=cat.slug,
                                             subcategory_slug=sc.slug, subject_slug=subj.slug),
-                      'changefreq': 'daily', 'priority': '0.7', 'lastmod': None})
+                      'changefreq': 'daily', 'priority': '0.7',
+                      'lastmod': lm.strftime('%Y-%m-%d') if lm else None})
 
     rows = (db.session.query(Review.id, Review.subject_id, Review.created_at)
             .filter_by(is_published=True).all())
@@ -392,8 +424,33 @@ def robots():
 
 @main.route('/llms.txt')
 def llms():
+    from .models import Subject, SubCategory
     base = request.host_url.rstrip('/')
     categories = Category.query.order_by(Category.name).all()
-    resp = make_response(render_template('llms.txt', categories=categories, base_url=base))
+
+    # Top 20 subjects by rating (min 5 reviews) with category/subcategory slugs attached
+    top_raw = (
+        Subject.query
+        .filter(Subject.review_count >= 5)
+        .order_by(Subject.avg_rating.desc(), Subject.review_count.desc())
+        .limit(20).all()
+    )
+    top_subjects = []
+    for s in top_raw:
+        sc = s.subcategory
+        cat = sc.category if sc else None
+        if sc and cat:
+            s._cat_slug = cat.slug
+            s._subcat_slug = sc.slug
+            top_subjects.append(s)
+
+    total_reviews = Subject.query.with_entities(
+        db.func.sum(Subject.review_count)).scalar() or 0
+    total_subjects = Subject.query.count()
+
+    resp = make_response(render_template('llms.txt', categories=categories, base_url=base,
+                                         top_subjects=top_subjects,
+                                         total_reviews=total_reviews,
+                                         total_subjects=total_subjects))
     resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
     return resp

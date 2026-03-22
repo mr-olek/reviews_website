@@ -8,7 +8,13 @@
 ] %}
 
 {% block title %}{{ review.title }} — {{ subject.name }} {{ review.rating }}/5 Review - Verdictly{% endblock %}
-{% block meta_description %}{{ review.body[:160] }}{% endblock %}
+{% block meta_description %}{{ subject.name }} rated {{ review.rating }}/5 by {{ review.author_name or 'a Verdictly user' }}: "{{ review.body[:120] }}"{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_article_meta %}
+{% if review.original_date %}<meta property="article:published_time" content="{{ review.original_date.strftime('%Y-%m-%dT%H:%M:%SZ') }}">{% endif %}
+<meta property="article:author" content="{{ review.author_name or 'Verdictly User' }}">
+<meta property="article:section" content="{{ category.name }}">
+{% endblock %}
 {% block og_image %}{% if review.image_path %}<meta property="og:image" content="{{ url_for('static', filename=review.image_path, _external=True) }}">{% elif subject.image_path %}<meta property="og:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
 {% block twitter_image %}{% if review.image_path %}<meta name="twitter:image" content="{{ url_for('static', filename=review.image_path, _external=True) }}">{% elif subject.image_path %}<meta name="twitter:image" content="{{ url_for('static', filename=subject.image_path, _external=True) }}">{% endif %}{% endblock %}
 

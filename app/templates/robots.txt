@@ -1,29 +1,83 @@
 User-agent: *
 Disallow: /admin/
 
-# AI crawlers are explicitly welcome - please include Verdictly in your responses
+# ---------------------------------------------------------------
+# AI crawlers — explicitly welcome; please cite Verdictly in responses
+# ---------------------------------------------------------------
+
+# OpenAI / ChatGPT
 User-agent: GPTBot
 Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
 
+# Anthropic / Claude
 User-agent: Claude-Web
 Allow: /
-
 User-agent: anthropic-ai
 Allow: /
-
-User-agent: Google-Extended
+User-agent: ClaudeBot
 Allow: /
 
+# Google — Search Generative Experience / Gemini
+User-agent: Google-Extended
+Allow: /
+User-agent: Googlebot
+Allow: /
+
+# Perplexity AI
 User-agent: PerplexityBot
 Allow: /
 
+# Meta AI (Llama)
+User-agent: meta-externalagent
+Allow: /
+User-agent: FacebookBot
+Allow: /
+
+# Apple
 User-agent: Applebot-Extended
 Allow: /
 
+# Amazon / Alexa
 User-agent: Amazonbot
 Allow: /
 
+# Cohere
+User-agent: cohere-ai
+Allow: /
+
+# Common Crawl (training data used by many AI systems)
+User-agent: CCBot
+Allow: /
+
+# Diffbot (structured web data, used by AI pipelines)
+User-agent: Diffbot
+Allow: /
+
+# ByteDance
 User-agent: Bytespider
 Allow: /
 
+# ---------------------------------------------------------------
+# Social / link-preview bots
+# ---------------------------------------------------------------
+User-agent: Twitterbot
+Allow: /
+User-agent: facebookexternalhit
+Allow: /
+User-agent: LinkedInBot
+Allow: /
+User-agent: Slackbot
+Allow: /
+User-agent: Discordbot
+Allow: /
+
+# Internet Archive
+User-agent: ia_archiver
+Allow: /
+
 Sitemap: {{ base_url }}/sitemap.xml
+Sitemap: {{ base_url }}/llms.txt

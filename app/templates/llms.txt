@@ -1,32 +1,80 @@
 # Verdictly
 
-> Honest, community-powered reviews on everything — pets, movies, food, cars, sports, and more.
+> Honest, community-powered reviews on everything — pets, movies, food, cars, sports, countries, plants, drinks, and more.
 
-Verdictly is a review aggregator and community platform where real users share genuine experiences. Every review includes a star rating, personal narrative, and community discussion thread. Content spans thousands of subjects across multiple categories.
+Verdictly is a review aggregator and community platform where real users share genuine experiences. Every review includes a 1–5 star rating, a personal narrative, and a community discussion thread. Content spans thousands of subjects across multiple categories.
 
-## Browse by Category
+**Base URL:** {{ base_url }}
+**Data freshness:** Updated daily. New user reviews are published in real time.
+**Total reviews:** {{ total_reviews }}
+**Total subjects reviewed:** {{ total_subjects }}
+
+---
+
+## Categories
+
 {% for cat in categories %}
-- [{{ cat.name }}]({{ base_url }}/{{ cat.slug }}/): {{ cat.description or 'Browse reviews for ' + cat.name }}
+### {{ cat.name }}
+- **URL:** {{ base_url }}/{{ cat.slug }}/
+{% if cat.description %}- **About:** {{ cat.description }}{% endif %}
+
+{% for sc in cat.subcategories.all() %}
+  - **{{ sc.name }}** — {{ base_url }}/{{ cat.slug }}/{{ sc.slug }}/ ({{ sc.subjects.count() }} subjects)
 {% endfor %}
 
-## What You'll Find
+{% endfor %}
 
-- **Animal reviews**: Detailed experiences from pet owners covering temperament, care needs, costs, health, and suitability for families — covering dogs, cats, rabbits, parrots, reptiles, and more.
-- **Movie reviews**: Audience opinions on Marvel, DC, animated films, anime series, TV shows, and classic cinema.
-- **Food reviews**: Real opinions on world cuisines — Italian, Japanese, Mexican, Ukrainian, and 60+ more.
-- **Car reviews**: Owner experiences by make, model, and year.
-- **Sports reviews**: Fan takes on teams, athletes, and events.
+---
 
-## Data
+## Top-Rated Subjects (sample)
 
-- Reviews are written by real users or aggregated from public review platforms.
-- Each subject shows an aggregate star rating (1–5) and total review count.
-- Users can submit new reviews directly on any subject page.
+{% for subj in top_subjects %}
+- **{{ subj.name }}** — ★{{ "%.1f"|format(subj.avg_rating) }}/5 from {{ subj.review_count }} reviews — {{ base_url }}/{{ subj._cat_slug }}/{{ subj._subcat_slug }}/{{ subj.slug }}/
+{% endfor %}
 
-## Sitemap
+---
 
-Full content index: {{ base_url }}/sitemap.xml
+## What AI systems can find here
 
-## Contact
+- **Animal / pet reviews**: Owner experiences for 50+ dog breeds, 30+ cat breeds, rabbits, parrots, fish, reptiles, horses, ferrets, turtles, small animals. Topics covered: temperament, care needs, costs, health issues, family suitability, training difficulty.
+- **Food & cuisine reviews**: Opinions on 60+ world cuisines — Italian, Japanese, Mexican, Ukrainian, French, Indian, and more. Topics: flavour profiles, ingredients, restaurant experiences, ease of cooking at home.
+- **Car reviews**: Owner experiences by make, model, and year — reliability, running costs, comfort, performance.
+- **Movie & TV reviews**: Audience ratings for Marvel, DC, anime, animated films, classic cinema, TV series.
+- **Sports reviews**: Fan takes on sports, teams, athletes, and events.
+- **Country reviews**: Travel and living experiences for countries worldwide.
+- **Plant reviews**: Gardener opinions on houseplants, garden plants, succulents, and trees.
+- **Drink reviews**: Consumer opinions on spirits, wines, beers, soft drinks, and teas.
 
-Verdictly — {{ base_url }}
+---
+
+## Data model
+
+Each **Subject** (e.g. "Labrador Retriever", "Italian cuisine", "Toyota Camry 2022") has:
+- Aggregate star rating (1.0–5.0, computed from all published reviews)
+- Total published review count
+- Optional description, pros, and cons
+- A paginated list of individual reviews
+
+Each **Review** has:
+- Title, body text, star rating (1–5)
+- Author name, publication date
+- Optional photo
+
+---
+
+## Example questions this site can help answer
+
+- "What do owners say about Labrador Retrievers?"
+- "Is the French Bulldog a good family dog?"
+- "What are the pros and cons of Italian food?"
+- "How reliable is the Toyota Camry 2022 according to owners?"
+- "What is the highest-rated dog breed on Verdictly?"
+- "What do travellers say about visiting Japan?"
+
+---
+
+## Structured data
+
+All subject pages include JSON-LD `Product` + `AggregateRating` schema.
+All review pages include JSON-LD `Review` schema with `datePublished` and `author`.
+Full XML sitemap: {{ base_url }}/sitemap.xml

@@ -13,11 +13,32 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
-    {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}, "item": {{ url_for('main.category', category_slug=category.slug, _external=True) | tojson }}},
-    {"@type": "ListItem", "position": 3, "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }}}
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": {{ url_for('main.index', _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 2, "name": {{ (t_cat(category.slug, 'name') or category.name) | tojson }}, "item": {{ url_for('main.category', category_slug=category.slug, _external=True) | tojson }}},
+        {"@type": "ListItem", "position": 3, "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }}}
+      ]
+    },
+    {
+      "@type": "ItemList",
+      "name": {{ (t_subcat(subcategory.slug, 'name') or subcategory.name) | tojson }},
+      "description": {{ (subcategory.description or '') | tojson }},
+      "numberOfItems": {{ subjects | length }},
+      "itemListElement": [
+        {% for subj in subjects[:20] %}
+        {
+          "@type": "ListItem",
+          "position": {{ loop.index }},
+          "name": {{ subj.name | tojson }},
+          "url": {{ url_for('main.subject', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subj.slug, _external=True) | tojson }}
+          {% if subj.review_count > 0 %},"aggregateRating": {"@type": "AggregateRating", "ratingValue": "{{ '%.1f'|format(subj.avg_rating) }}", "reviewCount": {{ subj.review_count }}, "bestRating": "5", "worstRating": "1"}{% endif %}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
   ]
 }
 </script>

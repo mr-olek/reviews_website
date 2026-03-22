@@ -20,6 +20,19 @@
       "@id": "{{ request.host_url }}#organization",
       "name": "Verdictly",
       "url": "{{ request.host_url }}"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.host_url }}#searchaction",
+      "url": "{{ request.host_url }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ request.host_url }}?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
     }
   ]
 }
