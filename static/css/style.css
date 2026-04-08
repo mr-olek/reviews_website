@@ -168,9 +168,14 @@ a:hover { text-decoration: underline; }
 
 /* ---- YouTube promo banner ---- */
 .yt-banner {
+  display: -webkit-box;
+  display: -webkit-flex;
   display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
   align-items: center;
   gap: 20px;
+  background: -webkit-linear-gradient(315deg, #fff7ed 0%, #fff 100%);
   background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
   border: 1px solid #fed7aa;
   border-radius: var(--radius);
@@ -178,27 +183,36 @@ a:hover { text-decoration: underline; }
   margin: 0 0 40px;
   text-decoration: none;
   color: inherit;
+  -webkit-transition: box-shadow .2s, -webkit-transform .15s;
   transition: box-shadow .2s, transform .15s;
   box-shadow: var(--shadow);
 }
 .yt-banner:hover {
   box-shadow: var(--shadow-md);
+  -webkit-transform: translateY(-2px);
   transform: translateY(-2px);
   text-decoration: none;
 }
 .yt-banner-icon {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   width: 52px;
   height: 52px;
   background: #ff0000;
   border-radius: 12px;
+  display: -webkit-box;
+  display: -webkit-flex;
   display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
   justify-content: center;
   font-size: 1.6rem;
   color: #fff;
 }
-.yt-banner-body { flex: 1; min-width: 0; }
+.yt-banner-body { -webkit-flex: 1; flex: 1; min-width: 0; }
 .yt-banner-title {
   font-weight: 700;
   font-size: 1rem;
@@ -210,6 +224,7 @@ a:hover { text-decoration: underline; }
   color: var(--text-muted);
 }
 .yt-banner-cta {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   background: #ff0000;
   color: #fff;
