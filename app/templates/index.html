@@ -64,14 +64,15 @@
   </div>
 </section>
 
-<a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner">
-  <div class="yt-banner-icon">▶</div>
+<div class="yt-banner">
+  <a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner-overlay" aria-label="Watch Carpe Diem Travels on YouTube"></a>
+  <div class="yt-banner-icon" aria-hidden="true">▶</div>
   <div class="yt-banner-body">
     <div class="yt-banner-title">Carpe Diem Travels — see the world behind the reviews</div>
     <div class="yt-banner-sub">Love exploring countries, food &amp; cultures? Our YouTube channel takes you there — real trips, honest impressions.</div>
   </div>
-  <span class="yt-banner-cta">Watch now</span>
-</a>
+  <span class="yt-banner-cta" aria-hidden="true">Watch now</span>
+</div>
 
 <section class="categories-section">
   <h2 class="section-title">{{ t('ui.browse_categories') }}</h2>

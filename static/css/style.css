@@ -168,30 +168,29 @@ a:hover { text-decoration: underline; }
 
 /* ---- YouTube promo banner ---- */
 .yt-banner {
-  display: -webkit-box;
-  display: -webkit-flex;
+  position: relative;
   display: flex;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
   align-items: center;
   gap: 20px;
-  background: -webkit-linear-gradient(315deg, #fff7ed 0%, #fff 100%);
   background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
   border: 1px solid #fed7aa;
   border-radius: var(--radius);
   padding: 20px 24px;
   margin: 0 0 40px;
-  text-decoration: none;
-  color: inherit;
-  -webkit-transition: box-shadow .2s, -webkit-transform .15s;
+  color: var(--text);
   transition: box-shadow .2s, transform .15s;
   box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.yt-banner-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  z-index: 1;
 }
 .yt-banner:hover {
   box-shadow: var(--shadow-md);
-  -webkit-transform: translateY(-2px);
   transform: translateY(-2px);
-  text-decoration: none;
 }
 .yt-banner-icon {
   -webkit-flex-shrink: 0;
