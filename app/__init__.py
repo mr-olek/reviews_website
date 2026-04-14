@@ -101,25 +101,4 @@ def _migrate(db):
 
 
 def _start_scheduler(app):
-    try:
-        from apscheduler.schedulers.background import BackgroundScheduler
-        from apscheduler.triggers.cron import CronTrigger
-
-        scheduler = BackgroundScheduler()
-
-        def daily_scrape():
-            with app.app_context():
-                from .models import Subject
-                from .scrapers import run_scraper
-                subjects = Subject.query.all()
-                for subject in subjects:
-                    try:
-                        run_scraper(subject, db)
-                    except Exception as e:
-                        app.logger.error(f"Scheduler scrape error for {subject.name}: {e}")
-
-        scheduler.add_job(daily_scrape, CronTrigger(hour=2, minute=0))
-        scheduler.start()
-        app.logger.info("APScheduler started (daily scrape at 2am)")
-    except Exception as e:
-        app.logger.warning(f"Could not start scheduler: {e}")
+    pass  # Scraper disabled

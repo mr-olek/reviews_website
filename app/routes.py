@@ -89,6 +89,17 @@ def _ensure_translations(objects, lang: str, fields: list[str]) -> None:
             current_app.logger.warning(f"Failed to save translations: {e}")
 
 
+@main.route('/favicon.ico')
+@main.route('/favicon.ico/')
+@main.route('/apple-touch-icon.png')
+@main.route('/apple-touch-icon.png/')
+@main.route('/apple-touch-icon-precomposed.png')
+@main.route('/apple-touch-icon-precomposed.png/')
+def favicon():
+    from flask import abort
+    abort(404)
+
+
 @main.route('/lang/<code>')
 def set_lang(code):
     from .i18n import LANGUAGES
