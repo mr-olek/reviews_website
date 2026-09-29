@@ -1,21 +1,20 @@
 #!/bin/bash
+set -euo pipefail
 
-# Ensure persistent uploads directories exist on /home
-mkdir -p /home/uploads/reviews
-mkdir -p /home/uploads/subjects
-mkdir -p /home/uploads/subcategories
-mkdir -p /home/uploads/categories
-
-# Symlink static/images/uploads to persistent storage
-rm -rf /home/site/wwwroot/static/images/uploads
-ln -sfn /home/uploads /home/site/wwwroot/static/images/uploads
-
-# On first deploy, copy seed DB from repo to persistent storage
-if [ ! -f /home/reviews.db ]; then
-    echo "First deploy — copying seed database to persistent storage..."
-    cp /home/site/wwwroot/instance/reviews.db /home/reviews.db
+# Run in the deployed application directory, including Oryx extracted builds.
+cd "$(dirname "$0")"
+mkdir -p /home/uploads/{reviews,subjects,subcategories,categories}
+# Seed uploads once without replacing files changed by site users.
+if [ -d static/images/uploads ] && [ ! -L static/images/uploads ]; then
+    cp -Rn static/images/uploads/. /home/uploads/
 fi
+# Config uses /home/uploads, while Flask serves it through the static symlink.
+if [ ! -L static/images/uploads ]; then
+    mv static/images/uploads static/images/uploads-seed
+fi
+ln -sfn /home/uploads static/images/uploads
 
-# Start gunicorn (DATABASE_URL points to /home/reviews.db via env var)
-cd /home/site/wwwroot
-gunicorn --bind=0.0.0.0:8000 --timeout=120 --workers=3 run:app
+if [ ! -f /home/reviews.db ]; then
+    cp instance/reviews.db /home/reviews.db
+fi
+exec gunicorn --bind=0.0.0.0:8000 --timeout=120 --workers=3 'app:create_app("production")'

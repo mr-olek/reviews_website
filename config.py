@@ -20,7 +20,7 @@ class Config:
     MAX_REVIEWS_PER_SCRAPE = int(os.environ.get('MAX_REVIEWS_PER_SCRAPE', '20'))
 
     IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'static', 'images', 'generated')
-    UPLOADS_DIR = os.path.join(os.path.dirname(__file__), 'static', 'images', 'uploads')
+    UPLOADS_DIR = os.environ.get('UPLOADS_DIR', os.path.join(os.path.dirname(__file__), 'static', 'images', 'uploads'))
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB upload limit
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
 
