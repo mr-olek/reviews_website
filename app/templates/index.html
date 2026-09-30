@@ -40,6 +40,16 @@
 {% endblock %}
 
 {% block content %}
+<div class="yt-banner">
+  <a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner-overlay" aria-label="Watch Carpe Diem Travels on YouTube"></a>
+  <div class="yt-banner-icon" aria-hidden="true">▶</div>
+  <div class="yt-banner-body">
+    <div class="yt-banner-title">Carpe Diem Travels</div>
+    <div class="yt-banner-sub">Explore countries, food &amp; cultures on our YouTube channel.</div>
+  </div>
+  <span class="yt-banner-cta" aria-hidden="true">Watch now</span>
+</div>
+
 <section class="hero">
   <div class="hero-inner">
     <p class="hero-eyebrow">{{ t('ui.trusted_by') }}</p>
@@ -99,14 +109,6 @@
   <p class="empty-state">{{ t('ui.no_category') }}</p>
   {% endif %}
 </section>
-<div class="yt-banner">
-  <a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner-overlay" aria-label="Watch Carpe Diem Travels on YouTube"></a>
-  <div class="yt-banner-icon" aria-hidden="true">▶</div>
-  <div class="yt-banner-body">
-    <div class="yt-banner-title">Carpe Diem Travels — see the world behind the reviews</div>
-    <div class="yt-banner-sub">Love exploring countries, food &amp; cultures? Our YouTube channel takes you there — real trips, honest impressions.</div>
-  </div>
-  <span class="yt-banner-cta" aria-hidden="true">Watch now</span>
-</div>
+
 
 {% endblock %}

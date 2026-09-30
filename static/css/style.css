@@ -958,7 +958,7 @@ a:hover { text-decoration: underline; }
 
   /* ---- YouTube banner mobile ---- */
   .yt-banner { flex-wrap: wrap; gap: 14px; }
-  .yt-banner-cta { display: none; }
+  .yt-banner-cta { display: inline-block; }
 
   /* ---- Footer safe area ---- */
   .site-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
@@ -1425,23 +1425,23 @@ a:hover { text-decoration: underline; }
 .site-header .container { min-height: 72px; }
 .main-nav .nav-link, .nav-dropdown-btn { min-height: 44px; display: inline-flex; align-items: center; }
 .lang-btn { min-width: 32px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
-.hero { background: #152d54; color: #fff; text-align: left; padding: 64px 56px; border-radius: 24px; margin-bottom: 40px; }
+.hero { background: #f5efdf; color: var(--text); text-align: left; padding: 64px 56px; border-radius: 24px; margin-bottom: 40px; }
 .hero-inner { max-width: 760px; margin: 0; }
-.hero-eyebrow { color: #a9c8ff; letter-spacing: .12em; }
-.hero h1 { color: #fff; font-size: clamp(2.4rem, 5vw, 3.8rem); letter-spacing: -.045em; max-width: 650px; }
-.hero-accent { color: #b8d1ff; }
-.hero-sub { color: #d5deed; margin: 0 0 24px; max-width: 580px; }
+.hero-eyebrow { color: #675b40; letter-spacing: .12em; }
+.hero h1 { color: var(--text); font-size: clamp(2.4rem, 5vw, 3.8rem); letter-spacing: -.045em; max-width: 650px; }
+.hero-accent { color: var(--primary); }
+.hero-sub { color: #56616b; margin: 0 0 24px; max-width: 580px; }
 .hero-stats { background: transparent; padding: 0; margin-top: 30px; justify-content: flex-start; gap: 24px; }
 .hero-stat { padding: 0; align-items: flex-start; }
-.hero-stat-num { color: #fff; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
-.hero-stat-label { color: #b8c5dc; font-size: .65rem; }
-.hero-stat-divider { background: #456086; height: 30px; }
+.hero-stat-num { color: var(--text); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.hero-stat-label { color: #675f50; font-size: .65rem; }
+.hero-stat-divider { background: #d6cdb9; height: 30px; }
 .search-form { display: flex; gap: 8px; background: #fff; border: 1px solid var(--border); padding: 7px; border-radius: 12px; max-width: 640px; }
 .search-form input { border: 0; min-width: 0; flex: 1; padding: 10px 14px; font: inherit; color: var(--text); background: transparent; border-radius: 6px; }
 .search-form input::placeholder { color: var(--text-muted); }
 .search-form button { border: 0; border-radius: 8px; padding: 12px 20px; background: var(--primary); color: #fff; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .search-form button:hover { background: var(--primary-dark); }
-.hero-search { border: 0; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.hero-search { border: 1px solid #ded5c2; box-shadow: 0 6px 20px rgba(76,61,32,.06); }
 .search-page-form { max-width: 100%; margin-bottom: 24px; }
 .categories-section { margin-bottom: 40px; }
 .section-title { font-size: 1.5rem; letter-spacing: -.025em; }
@@ -1475,14 +1475,18 @@ a:hover { text-decoration: underline; }
 .review-excerpt, .review-full-body, .reply-body { overflow-wrap: anywhere; }
 .review-full-body { line-height: 1.85; }
 .review-card, .write-review-section { box-shadow: none; }
-.yt-banner { background: #fff; border-color: var(--border); margin-bottom: 0; padding: 18px 22px; box-shadow: none; }
-.yt-banner-title { font-size: .9rem; }
-.yt-banner-sub { font-size: .8rem; }
+.yt-banner { background: #fff; border-color: #efc9bd; margin-bottom: 24px; padding: 18px 22px; box-shadow: none; }
+.yt-banner-title { font-size: 1rem; }
+.yt-banner-sub { font-size: .85rem; }
 .yt-banner-icon { width: 40px; height: 40px; font-size: 1.1rem; }
 @media (max-width: 599px) {
   .site-header .container { min-height: 60px; }
   .main-nav { top: calc(60px + env(safe-area-inset-top, 0px)); }
   .hero { padding: 32px 22px; border-radius: 18px; margin-bottom: 28px; }
+  .yt-banner { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px 12px; padding: 16px; }
+  .yt-banner-icon { align-self: start; }
+  .yt-banner-body { grid-column: 2; }
+  .yt-banner-cta { grid-column: 2; justify-self: start; margin: 0; padding: 7px 14px; }
   .hero h1 { font-size: 2.25rem; }
   .hero-sub { font-size: .95rem; }
   .hero-stats { display: flex; gap: 16px; margin-top: 24px; }
