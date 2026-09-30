@@ -49,6 +49,7 @@
       </td>
       <td>
         <form method="POST" action="{{ url_for('admin.toggle_published', review_id=rev.id) }}" style="display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="badge {% if rev.is_published %}badge-green{% else %}badge-yellow{% endif %} badge-btn">
             {{ 'Published' if rev.is_published else 'Pending' }}
           </button>
@@ -58,6 +59,7 @@
         <a href="{{ url_for('admin.edit_review', review_id=rev.id) }}" class="btn-sm">Edit</a>
         <form method="POST" action="{{ url_for('admin.delete_review', review_id=rev.id) }}"
               onsubmit="return confirm('Delete this review?')" style="display:inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn-sm btn-danger">Delete</button>
         </form>
       </td>

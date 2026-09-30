@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('ui.search') }}{% if query %}: {{ query }}{% endif %} - Verdictly{% endblock %}
+{% block meta_robots %}noindex, follow{% endblock %}
+{% block content %}
+<div class="page-header"><div><p class="page-eyebrow">Verdictly</p><h1>{{ t('ui.search') }}</h1></div></div>
+<form class="search-form search-page-form" action="{{ url_for('main.search') }}" method="GET" role="search">
+  <label class="sr-only" for="search-query">{{ t('ui.search') }}</label>
+  <input id="search-query" type="search" name="q" value="{{ query }}" maxlength="100" placeholder="{{ t('ui.search_placeholder') }}" required>
+  <button type="submit">{{ t('ui.search') }}</button>
+</form>
+{% if pagination %}
+<p class="results-summary" role="status">{{ t('ui.search_results', count=pagination.total, query=query) }}</p>
+<div class="subjects-grid">
+  {% for subject in pagination.items %}
+  <a class="subject-card" href="{{ url_for('main.subject', category_slug=subject.subcategory.category.slug, subcategory_slug=subject.subcategory.slug, subject_slug=subject.slug) }}">
+    {% if subject.image_path %}<div class="subject-img-wrap"><img src="{{ url_for('static', filename=subject.image_path) }}" alt="" loading="lazy"></div>{% else %}<div class="subject-img-placeholder" aria-hidden="true">{{ subject.subcategory.category.icon or '⭐' }}</div>{% endif %}
+    <div class="subject-card-body">
+      <p class="result-category">{{ t_cat(subject.subcategory.category.slug, 'name') or subject.subcategory.category.name }} · {{ t_subcat(subject.subcategory.slug, 'name') or subject.subcategory.name }}</p>
+      <h2 class="subject-name">{{ subject.name }}</h2>
+      <p class="subject-meta">{% if subject.review_count %}<span class="stars">★</span> {{ '%.1f'|format(subject.avg_rating) }} · {{ subject.review_count }} {{ t('ui.reviews') }}{% else %}{{ t('ui.no_reviews_yet') }} {{ subject.name }}{% endif %}</p>
+    </div>
+  </a>
+  {% else %}<div class="empty-state"><h2>{{ t('ui.no_results') }}</h2><p>{{ t('ui.try_another_search') }}</p></div>{% endfor %}
+</div>
+{% if pagination.pages > 1 %}
+<nav class="pagination" aria-label="{{ t('ui.search') }}">
+  {% if pagination.has_prev %}<a class="page-btn" href="{{ url_for('main.search', q=query, page=pagination.prev_num) }}">{{ t('ui.previous') }}</a>{% endif %}
+  <span class="page-info">{{ t('ui.page_of', page=pagination.page, pages=pagination.pages) }}</span>
+  {% if pagination.has_next %}<a class="page-btn" href="{{ url_for('main.search', q=query, page=pagination.next_num) }}">{{ t('ui.next') }}</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}<p class="empty-state">{{ t('ui.search_placeholder') }}</p>{% endif %}
+{% endblock %}

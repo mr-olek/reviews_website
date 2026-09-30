@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>{% block title %}Verdictly - Honest Reviews on Everything{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Real, honest reviews on pets, food, cars, movies, sports, and more.{% endblock %}">
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="robots" content="{% block meta_robots %}index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1{% endblock %}">
   <!-- Open Graph -->
   <meta property="og:site_name" content="Verdictly">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
@@ -26,12 +26,13 @@
   <meta name="twitter:description" content="{{ self.meta_description() }}">
   {% block twitter_image %}{% endblock %}
   {% block schema_json %}{% endblock %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260414b') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260930') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">{{ t('ui.skip_content') }}</a>
   <header class="site-header">
     <div class="container">
       <a href="{{ url_for('main.index') }}" class="logo">
@@ -40,8 +41,9 @@
       </a>
       <nav class="main-nav" id="main-nav">
         <a href="{{ url_for('main.index') }}" class="nav-link">{{ t('ui.home') }}</a>
+        <a href="{{ url_for('main.search') }}" class="nav-link">{{ t('ui.search') }}</a>
         <div class="nav-dropdown" id="nav-dropdown">
-          <button class="nav-dropdown-btn" id="nav-dropdown-btn" aria-expanded="false" aria-haspopup="true">
+          <button class="nav-dropdown-btn" id="nav-dropdown-btn" aria-expanded="false" aria-haspopup="true" aria-controls="nav-dropdown-menu">
             Browse <span class="nav-dropdown-arrow" aria-hidden="true">▾</span>
           </button>
           <div class="nav-dropdown-menu" id="nav-dropdown-menu">
@@ -55,10 +57,10 @@
         {% for code, info in LANGUAGES.items() %}
         <a href="{{ url_for('main.set_lang', code=code) }}"
            class="lang-btn {% if current_lang == code %}lang-btn--active{% endif %}"
-           title="{{ info.name }}">{{ info.flag }}</a>
+           title="{{ info.name }}" aria-label="{{ info.name }}" lang="{{ code }}" {% if current_lang == code %}aria-current="true"{% endif %}>{{ info.flag }}</a>
         {% endfor %}
       </div>
-      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false">
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav">
         <span class="nav-toggle-icon">&#9776;</span>
       </button>
     </div>
@@ -82,7 +84,7 @@
   </div>
   {% endif %}
 
-  <main class="main-content">
+  <main class="main-content" id="main-content" tabindex="-1">
     <div class="container">
       {% block content %}{% endblock %}
     </div>
@@ -128,6 +130,21 @@
           dropBtn.classList.remove('active');
         });
       }
+      document.addEventListener('keydown', function(e){
+        if (e.key !== 'Escape') return;
+        if (nav.classList.contains('open')) {
+          nav.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+          toggle.querySelector('.nav-toggle-icon').innerHTML = '&#9776;';
+          toggle.focus();
+        }
+        if (dropMenu && dropMenu.classList.contains('open')) {
+          dropMenu.classList.remove('open');
+          dropBtn.setAttribute('aria-expanded', 'false');
+          dropBtn.classList.remove('active');
+          dropBtn.focus();
+        }
+      });
     })();
   </script>
 </body>

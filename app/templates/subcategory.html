@@ -61,6 +61,12 @@
   </div>
 </div>
 
+<form class="catalog-toolbar" method="GET">
+  <div class="catalog-search"><label class="sr-only" for="catalog-query">{{ t('ui.filter_topics') }}</label><input id="catalog-query" type="search" name="q" value="{{ query }}" placeholder="{{ t('ui.filter_topics') }}" maxlength="100"></div>
+  <div class="catalog-sort"><label for="catalog-sort">{{ t('ui.sort_by') }}</label><select id="catalog-sort" name="sort"><option value="name" {% if sort == 'name' %}selected{% endif %}>{{ t('ui.sort_name') }}</option><option value="reviews" {% if sort == 'reviews' %}selected{% endif %}>{{ t('ui.sort_reviews') }}</option><option value="rating" {% if sort == 'rating' %}selected{% endif %}>{{ t('ui.sort_rating') }}</option></select></div>
+  <button class="btn-primary" type="submit">{{ t('ui.apply') }}</button>
+</form>
+<p class="results-summary" role="status">{{ subjects|length }} {{ t('ui.topics_stat')|lower }}{% if query %} · “{{ query }}” <a href="{{ url_for('main.subcategory', category_slug=category.slug, subcategory_slug=subcategory.slug) }}">{{ t('ui.clear_filters') }}</a>{% endif %}</p>
 {% if subjects %}
 <div class="subjects-grid">
   {% for subj in subjects %}
@@ -95,6 +101,6 @@
   {% endfor %}
 </div>
 {% else %}
-<p class="empty-state">{{ t('ui.no_entries') }} {{ t_subcat(subcategory.slug, 'name') or subcategory.name }}.</p>
+<div class="empty-state"><h2>{{ t('ui.no_results') if query else t('ui.no_entries') }}</h2><p>{{ t('ui.try_another_search') if query else (t_subcat(subcategory.slug, 'name') or subcategory.name) }}</p></div>
 {% endif %}
 {% endblock %}

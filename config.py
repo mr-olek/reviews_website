@@ -13,6 +13,9 @@ class Config:
         if DATABASE_URL.startswith('sqlite:') else {'pool_pre_ping': True}
     )
     TRUST_PROXY_HEADERS = bool(os.environ.get('WEBSITE_HOSTNAME'))
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = bool(os.environ.get('WEBSITE_HOSTNAME'))
 
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-6')

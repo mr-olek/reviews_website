@@ -111,7 +111,7 @@ def set_lang(code):
 def _page_cache_key():
     lang = session.get('lang', 'en')
     qs = request.query_string.decode('utf-8', errors='replace')
-    return f'page:{request.path}:{qs}:{lang}'
+    return f'page:{request.host_url}:{request.path}:{qs}:{lang}'
 
 
 _BOT_KEYWORDS = (
@@ -188,8 +188,26 @@ def index():
     cat_review_counts = {cat_id: int(count or 0) for cat_id, count in counts}
     total_reviews = sum(cat_review_counts.values())
     total_subjects = Subject.query.count()
+    subcategory_counts = dict(db.session.query(SubCategory.category_id, func.count(SubCategory.id))
+                              .group_by(SubCategory.category_id).all())
     return render_template('index.html', categories=categories, cat_review_counts=cat_review_counts,
-                           total_reviews=total_reviews, total_subjects=total_subjects)
+                           total_reviews=total_reviews, total_subjects=total_subjects,
+                           subcategory_counts=subcategory_counts)
+
+
+@main.route('/search/')
+@cache.cached(timeout=120, key_prefix=_page_cache_key)
+def search():
+    from sqlalchemy.orm import joinedload
+    query = request.args.get('q', '').strip()[:100]
+    page = request.args.get('page', 1, type=int)
+    results = None
+    if query:
+        results = (Subject.query.options(joinedload(Subject.subcategory).joinedload(SubCategory.category))
+                   .filter(Subject.name.icontains(query, autoescape=True))
+                   .order_by(Subject.review_count.desc(), Subject.name)
+                   .paginate(page=page, per_page=24, error_out=False))
+    return render_template('search.html', query=query, pagination=results)
 
 
 _SUBCAT_ORDER = [
@@ -215,20 +233,22 @@ _FOOD_ORDER = [
 @main.route('/<category_slug>/')
 @cache.cached(timeout=300, key_prefix=_page_cache_key)
 def category(category_slug):
-    from .models import Subject
+    from sqlalchemy import case, func
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcats = SubCategory.query.filter_by(category_id=cat.id).order_by(db.func.lower(SubCategory.name)).all()
     order = _FOOD_ORDER if cat.slug == 'food' else _SUBCAT_ORDER
     subcats.sort(key=lambda s: order.index(s.slug) if s.slug in order else 999)
 
     # Aggregate review count and avg rating per subcategory
-    subcat_stats = {}
-    for sc in subcats:
-        subjects = Subject.query.filter_by(subcategory_id=sc.id).all()
-        total_reviews = sum(s.review_count or 0 for s in subjects)
-        rated = [s for s in subjects if s.avg_rating and s.review_count]
-        avg = (sum(s.avg_rating * s.review_count for s in rated) / sum(s.review_count for s in rated)) if rated else 0
-        subcat_stats[sc.id] = {'review_count': total_reviews, 'avg_rating': round(avg, 1)}
+    rows = (db.session.query(SubCategory.id, func.count(Subject.id),
+                             func.sum(Subject.review_count),
+                             func.sum(Subject.avg_rating * Subject.review_count),
+                             func.sum(case((Subject.avg_rating > 0, Subject.review_count), else_=0)))
+            .outerjoin(Subject).filter(SubCategory.category_id == cat.id)
+            .group_by(SubCategory.id).all())
+    subcat_stats = {sc_id: {'subject_count': count, 'review_count': int(reviews or 0),
+                           'avg_rating': round((weighted or 0) / rated, 1) if rated else 0}
+                    for sc_id, count, reviews, weighted, rated in rows}
 
     return render_template('category.html', category=cat, subcategories=subcats, subcat_stats=subcat_stats)
 
@@ -240,12 +260,21 @@ def category(category_slug):
 def subcategory(category_slug, subcategory_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
-    subjects = subcat.subjects.order_by('name').all()
-    return render_template('subcategory.html', category=cat, subcategory=subcat, subjects=subjects)
+    query = request.args.get('q', '').strip()[:100]
+    sort = request.args.get('sort', 'name')
+    ordering = {'name': Subject.name, 'reviews': Subject.review_count.desc(),
+                'rating': Subject.avg_rating.desc()}
+    if sort not in ordering:
+        sort = 'name'
+    subjects_query = subcat.subjects
+    if query:
+        subjects_query = subjects_query.filter(Subject.name.icontains(query, autoescape=True))
+    subjects = subjects_query.order_by(ordering[sort], Subject.name).all()
+    return render_template('subcategory.html', category=cat, subcategory=subcat, subjects=subjects,
+                           query=query, sort=sort)
 
 
 @main.route('/<category_slug>/<subcategory_slug>/<subject_slug>/')
-@cache.cached(timeout=120, key_prefix=_page_cache_key)
 def subject(category_slug, subcategory_slug, subject_slug):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
@@ -281,6 +310,14 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
         errors.append('Title is required.')
     if not body or len(body) < 20:
         errors.append('Review must be at least 20 characters.')
+    if len(title) > 200 or len(body) > 20000 or len(author) > 100:
+        errors.append('Please shorten your title, review, or name.')
+    image_path = None
+    if not errors:
+        upload = request.files.get('image')
+        image_path = save_upload(upload, 'reviews')
+        if upload and upload.filename and not image_path:
+            errors.append('Please upload a valid JPG, PNG, GIF, or WebP photo under 20 megapixels.')
 
     if errors:
         page = request.args.get('page', 1, type=int)
@@ -294,8 +331,6 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
                                pagination=pagination, form_errors=errors,
                                form_data=request.form)
 
-    image_path = save_upload(request.files.get('image'), 'reviews')
-
     review = Review(
         subject_id=subj.id,
         title=title,
@@ -308,7 +343,6 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
         image_path=image_path,
     )
     db.session.add(review)
-    db.session.commit()
     subj.update_stats()
     db.session.commit()
     cache.clear()
@@ -319,7 +353,6 @@ def submit_review(category_slug, subcategory_slug, subject_slug):
 
 
 @main.route('/<category_slug>/<subcategory_slug>/<subject_slug>/<int:review_id>/')
-@cache.cached(timeout=300, key_prefix=_page_cache_key)
 def review(category_slug, subcategory_slug, subject_slug, review_id):
     cat = Category.query.filter_by(slug=category_slug).first_or_404()
     subcat = SubCategory.query.filter_by(category_id=cat.id, slug=subcategory_slug).first_or_404()
@@ -342,10 +375,12 @@ def post_reply(category_slug, subcategory_slug, subject_slug, review_id):
     body = request.form.get('body', '').strip()
     parent_id = request.form.get('parent_id', type=int)
 
-    if author and body:
+    if author and body and len(author) <= 100 and len(body) <= 2000:
         # Cap nesting at 2 levels: flatten deeper replies to the top-level parent
         if parent_id:
-            parent = ReviewReply.query.get(parent_id)
+            parent = ReviewReply.query.filter_by(id=parent_id, review_id=rev.id).first()
+            if not parent:
+                parent_id = None
             if parent and parent.parent_id is not None:
                 parent_id = parent.parent_id
         reply = ReviewReply(

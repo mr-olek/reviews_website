@@ -3,9 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_caching import Cache
 from config import config
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_wtf import CSRFProtect
 
 db = SQLAlchemy()
 cache = Cache()
+csrf = CSRFProtect()
 
 
 def create_app(config_name='default'):
@@ -17,6 +19,25 @@ def create_app(config_name='default'):
 
     db.init_app(app)
     cache.init_app(app)
+    csrf.init_app(app)
+
+    def error_page(error):
+        code = getattr(error, 'code', 500)
+        titles = {400: 'Please refresh and try again', 404: 'Page not found',
+                  413: 'That photo is too large', 500: 'Something went wrong'}
+        messages = {400: 'Your form may have expired. Go back, refresh the page, and submit it again.',
+                    404: 'This page may have moved. Browse the categories or search for a topic from the homepage.',
+                    413: 'Please choose a photo smaller than 10 MB.',
+                    500: 'We could not load this page right now. Please try again in a moment.'}
+        if code == 500:
+            db.session.rollback()
+        # Render without database-dependent context processors, so an error
+        # page remains available even when the database is unavailable.
+        return app.jinja_env.get_template('error.html').render(
+            code=code, title=titles[code], message=messages[code]), code
+
+    for code in (400, 404, 413, 500):
+        app.register_error_handler(code, error_page)
 
     from .routes import main
     app.register_blueprint(main)
@@ -86,6 +107,9 @@ def _migrate(db):
                     conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {sql_type}'))
         for column in ('subject_id', 'is_published', 'created_at'):
             conn.execute(text(f'CREATE INDEX IF NOT EXISTS ix_reviews_{column} ON reviews ({column})'))
+        conn.execute(text('CREATE INDEX IF NOT EXISTS ix_reviews_subject_published_date ON reviews (subject_id, is_published, created_at)'))
+        conn.execute(text('CREATE INDEX IF NOT EXISTS ix_subjects_subcategory_id ON subjects (subcategory_id)'))
+        conn.execute(text('CREATE INDEX IF NOT EXISTS ix_subcategories_category_id ON subcategories (category_id)'))
 
 
 def _start_scheduler(app):

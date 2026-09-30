@@ -67,15 +67,15 @@
       <h3 class="subject-name">{{ t_subcat(subcat.slug, 'name') or subcat.name }}</h3>
       <div class="subcat-meta">
         {% if category.slug == 'cars' %}
-        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_models') }}</span>
+        <span class="review-count">{{ stats.subject_count }} {{ t('ui.count_models') }}</span>
         {% elif category.slug == 'movies' %}
-        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_titles') }}</span>
+        <span class="review-count">{{ stats.subject_count }} {{ t('ui.count_titles') }}</span>
         {% elif category.slug in ('drinks', 'sports', 'plants', 'food') %}
-        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_types') }}</span>
+        <span class="review-count">{{ stats.subject_count }} {{ t('ui.count_types') }}</span>
         {% elif category.slug == 'countries' %}
-        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_countries') }}</span>
+        <span class="review-count">{{ stats.subject_count }} {{ t('ui.count_countries') }}</span>
         {% else %}
-        <span class="review-count">{{ subcat.subjects.count() }} {{ t('ui.count_breeds') }}</span>
+        <span class="review-count">{{ stats.subject_count }} {{ t('ui.count_breeds') }}</span>
         {% endif %}
         {% if stats.review_count %}
         <span class="subcat-sep">·</span>

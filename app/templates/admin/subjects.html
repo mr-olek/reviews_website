@@ -19,12 +19,14 @@
       <form method="POST" enctype="multipart/form-data"
             action="{{ url_for('admin.upload_subject_image', subject_id=subj.id) }}"
             class="subject-upload-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="file" name="image" accept="image/*" class="form-file" required>
         <button type="submit" class="btn-sm btn-primary" style="margin-top:6px">Upload photo</button>
       </form>
       {% if subj.image_path %}
       <form method="POST" action="{{ url_for('admin.delete_subject_image', subject_id=subj.id) }}"
             onsubmit="return confirm('Remove photo for {{ subj.name }}?')" style="margin-top:4px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn-sm btn-danger">Remove photo</button>
       </form>
       {% endif %}

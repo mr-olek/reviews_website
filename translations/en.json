@@ -64,7 +64,20 @@
     "back_to_reviews": "Back to",
     "review_breadcrumb": "Review",
     "no_category": "No categories yet.",
-    "language": "Language"
+    "language": "Language",
+    "search": "Search",
+    "search_placeholder": "Search breeds, cars, food, and more…",
+    "search_results": "{count} results for “{query}”",
+    "no_results": "No results found",
+    "try_another_search": "Try a different name or a shorter search.",
+    "filter_topics": "Filter topics by name…",
+    "sort_by": "Sort by",
+    "sort_name": "Name A–Z",
+    "sort_reviews": "Most reviewed",
+    "sort_rating": "Highest rated",
+    "apply": "Apply",
+    "clear_filters": "Clear filters",
+    "skip_content": "Skip to content"
   },
   "categories": {
     "animals": {

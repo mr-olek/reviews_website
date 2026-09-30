@@ -29,7 +29,7 @@
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "{{ request.host_url }}?q={search_term_string}"
+          "urlTemplate": "{{ url_for("main.search", _external=True) }}?q={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
@@ -45,9 +45,14 @@
     <p class="hero-eyebrow">{{ t('ui.trusted_by') }}</p>
     <h1>{{ t('ui.hero_title') }} <span class="hero-accent">{{ t('ui.hero_accent') }}</span></h1>
     <p class="hero-sub">{{ t('ui.hero_sub') }}</p>
+    <form class="search-form hero-search" action="{{ url_for('main.search') }}" method="GET" role="search">
+      <label class="sr-only" for="hero-search">{{ t('ui.search') }}</label>
+      <input id="hero-search" name="q" type="search" placeholder="{{ t('ui.search_placeholder') }}" maxlength="100" required>
+      <button type="submit">{{ t('ui.search') }} <span aria-hidden="true">↗</span></button>
+    </form>
     <div class="hero-stats">
       <div class="hero-stat">
-        <span class="hero-stat-num">{{ total_reviews | default(0) }}</span>
+        <span class="hero-stat-num">{{ "{:,}".format(total_reviews | default(0)) }}</span>
         <span class="hero-stat-label">{{ t('ui.reviews_stat') }}</span>
       </div>
       <div class="hero-stat-divider"></div>
@@ -57,22 +62,13 @@
       </div>
       <div class="hero-stat-divider"></div>
       <div class="hero-stat">
-        <span class="hero-stat-num">{{ total_subjects | default(0) }}</span>
+        <span class="hero-stat-num">{{ "{:,}".format(total_subjects | default(0)) }}</span>
         <span class="hero-stat-label">{{ t('ui.topics_stat') }}</span>
       </div>
     </div>
   </div>
 </section>
 
-<div class="yt-banner">
-  <a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner-overlay" aria-label="Watch Carpe Diem Travels on YouTube"></a>
-  <div class="yt-banner-icon" aria-hidden="true">▶</div>
-  <div class="yt-banner-body">
-    <div class="yt-banner-title">Carpe Diem Travels — see the world behind the reviews</div>
-    <div class="yt-banner-sub">Love exploring countries, food &amp; cultures? Our YouTube channel takes you there — real trips, honest impressions.</div>
-  </div>
-  <span class="yt-banner-cta" aria-hidden="true">Watch now</span>
-</div>
 
 <section class="categories-section">
   <h2 class="section-title">{{ t('ui.browse_categories') }}</h2>
@@ -93,7 +89,7 @@
       <p class="category-desc">{{ t_cat(cat.slug, 'description') or cat.description }}</p>
       {% endif %}
       <span class="category-count">
-        {{ cat.subcategories.count() }} {{ t('ui.subcategories') }} · {{ cat_review_counts[cat.id] }} {{ t('ui.reviews') }}
+        {{ subcategory_counts.get(cat.id, 0) }} {{ t('ui.subcategories') }} · {{ cat_review_counts[cat.id] }} {{ t('ui.reviews') }}
       </span>
       {% if cat.image_path %}</div>{% endif %}
     </a>
@@ -103,4 +99,14 @@
   <p class="empty-state">{{ t('ui.no_category') }}</p>
   {% endif %}
 </section>
+<div class="yt-banner">
+  <a href="{{ url_for('main.youtube_redirect') }}" target="_blank" rel="noopener" class="yt-banner-overlay" aria-label="Watch Carpe Diem Travels on YouTube"></a>
+  <div class="yt-banner-icon" aria-hidden="true">▶</div>
+  <div class="yt-banner-body">
+    <div class="yt-banner-title">Carpe Diem Travels — see the world behind the reviews</div>
+    <div class="yt-banner-sub">Love exploring countries, food &amp; cultures? Our YouTube channel takes you there — real trips, honest impressions.</div>
+  </div>
+  <span class="yt-banner-cta" aria-hidden="true">Watch now</span>
+</div>
+
 {% endblock %}

@@ -8,7 +8,7 @@ from flask import (
     Blueprint, current_app, flash, redirect, render_template,
     request, session, url_for,
 )
-from . import db
+from . import db, cache
 from .models import Category, Review, Subject, SubCategory
 from .utils import save_upload as _save_upload
 
@@ -52,6 +52,10 @@ def login():
             session['admin'] = True
             session.permanent = False
             next_url = request.args.get('next') or url_for('admin.dashboard')
+            from urllib.parse import urlsplit
+            if (not next_url.startswith('/') or next_url.startswith('//')
+                    or '\\' in next_url or urlsplit(next_url).netloc):
+                next_url = url_for('admin.dashboard')
             return redirect(next_url)
         error = 'Incorrect username or password.'
     return render_template('admin/login.html', error=error)
@@ -230,9 +234,9 @@ def edit_review(review_id):
                 _delete_file(rev.image_path)
                 rev.image_path = path
 
-        db.session.commit()
         rev.subject.update_stats()
         db.session.commit()
+        cache.clear()
         flash('Review updated.', 'success')
         return redirect(url_for('admin.reviews'))
 
@@ -246,9 +250,9 @@ def delete_review(review_id):
     subj = rev.subject
     _delete_file(rev.image_path)
     db.session.delete(rev)
-    db.session.commit()
     subj.update_stats()
     db.session.commit()
+    cache.clear()
     flash('Review deleted.', 'success')
     return redirect(url_for('admin.reviews'))
 
@@ -260,6 +264,7 @@ def delete_review_image(review_id):
     _delete_file(rev.image_path)
     rev.image_path = None
     db.session.commit()
+    cache.clear()
     flash('Image removed.', 'success')
     return redirect(url_for('admin.edit_review', review_id=review_id))
 
@@ -269,9 +274,9 @@ def delete_review_image(review_id):
 def toggle_published(review_id):
     rev = Review.query.get_or_404(review_id)
     rev.is_published = not rev.is_published
-    db.session.commit()
     rev.subject.update_stats()
     db.session.commit()
+    cache.clear()
     return redirect(request.referrer or url_for('admin.reviews'))
 
 
@@ -296,6 +301,7 @@ def upload_subject_image(subject_id):
         _delete_file(subj.image_path)
         subj.image_path = path
         db.session.commit()
+        cache.clear()
         flash(f'Photo updated for {subj.name}.', 'success')
     else:
         flash('Invalid file. Use jpg, png, webp, or gif.', 'error')
@@ -309,6 +315,7 @@ def delete_subject_image(subject_id):
     _delete_file(subj.image_path)
     subj.image_path = None
     db.session.commit()
+    cache.clear()
     flash(f'Photo removed for {subj.name}.', 'success')
     return redirect(url_for('admin.subjects'))
 
@@ -326,6 +333,7 @@ def upload_category_image(cat_id):
         _delete_file(cat.image_path)
         cat.image_path = path
         db.session.commit()
+        cache.clear()
         flash(f'Photo updated for {cat.name}.', 'success')
     else:
         flash('Invalid file.', 'error')
@@ -339,6 +347,7 @@ def delete_category_image(cat_id):
     _delete_file(cat.image_path)
     cat.image_path = None
     db.session.commit()
+    cache.clear()
     flash(f'Photo removed for {cat.name}.', 'success')
     return redirect(url_for('admin.subjects'))
 
@@ -352,6 +361,7 @@ def upload_subcategory_image(subcat_id):
         _delete_file(subcat.image_path)
         subcat.image_path = path
         db.session.commit()
+        cache.clear()
         flash(f'Photo updated for {subcat.name}.', 'success')
     else:
         flash('Invalid file.', 'error')
@@ -365,6 +375,7 @@ def delete_subcategory_image(subcat_id):
     _delete_file(subcat.image_path)
     subcat.image_path = None
     db.session.commit()
+    cache.clear()
     flash(f'Photo removed for {subcat.name}.', 'success')
     return redirect(url_for('admin.subjects'))
 

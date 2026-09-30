@@ -64,7 +64,20 @@
     "back_to_reviews": "Retour à",
     "review_breadcrumb": "Avis",
     "no_category": "Pas encore de catégories.",
-    "language": "Langue"
+    "language": "Langue",
+    "search": "Rechercher",
+    "search_placeholder": "Rechercher races, voitures, plats et plus…",
+    "search_results": "{count} résultats pour « {query} »",
+    "no_results": "Aucun résultat",
+    "try_another_search": "Essayez un autre nom ou une recherche plus courte.",
+    "filter_topics": "Filtrer les sujets par nom…",
+    "sort_by": "Trier par",
+    "sort_name": "Nom A–Z",
+    "sort_reviews": "Les plus commentés",
+    "sort_rating": "Les mieux notés",
+    "apply": "Appliquer",
+    "clear_filters": "Effacer les filtres",
+    "skip_content": "Aller au contenu"
   },
   "categories": {
     "animals": {

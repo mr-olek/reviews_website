@@ -185,12 +185,13 @@
 
   <form class="review-form" method="POST" enctype="multipart/form-data"
         action="{{ url_for('main.submit_review', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div class="form-group">
-      <label class="form-label">{{ t('ui.your_rating') }} <span class="required">*</span></label>
-      <div class="star-picker" id="star-picker">
+      <span class="form-label" id="rating-label">{{ t('ui.your_rating') }} <span class="required">*</span></span>
+      <div class="star-picker" id="star-picker" role="radiogroup" aria-labelledby="rating-label">
         {% for i in range(5, 0, -1) %}
-        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
+        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" aria-label="{{ i }} / 5"
                {% if form_data and form_data.get('rating')|int == i %}checked
                {% elif not form_data and i == 5 %}checked{% endif %}>
         <label for="star{{ i }}" title="{{ i }} star{{ 's' if i > 1 }}">★</label>
@@ -208,7 +209,7 @@
     <div class="form-group">
       <label class="form-label" for="review-body">{{ t('ui.review_body_label') }} <span class="required">*</span></label>
       <textarea id="review-body" name="body" class="form-textarea" rows="6"
-                placeholder="{{ t('ui.review_placeholder') }}" required minlength="20">{{ form_data.get('body', '') if form_data else '' }}</textarea>
+                placeholder="{{ t('ui.review_placeholder') }}" required minlength="20" maxlength="20000">{{ form_data.get('body', '') if form_data else '' }}</textarea>
     </div>
 
     <div class="form-row">
@@ -216,7 +217,7 @@
         <label class="form-label" for="review-author">{{ t('ui.your_name_label') }}</label>
         <input type="text" id="review-author" name="author_name" class="form-input"
                placeholder="{{ t('ui.name_placeholder') }}"
-               value="{{ form_data.get('author_name', '') if form_data else '' }}" maxlength="100">
+               value="{{ form_data.get('author_name', '') if form_data else '' }}" maxlength="100" autocomplete="name">
       </div>
       <div class="form-group">
         <label class="form-label" for="review-image">{{ t('ui.add_photo_label') }} <span class="form-hint">{{ t('ui.photo_hint') }}</span></label>
@@ -249,6 +250,11 @@ document.querySelector('.review-form').addEventListener('submit', function() {
   const btn = this.querySelector('[type="submit"]');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
+});
+window.addEventListener('pageshow', function() {
+  const btn = document.querySelector('.review-form [type="submit"]');
+  btn.disabled = false;
+  btn.textContent = {{ t('ui.submit_review')|tojson }};
 });
 </script>
 {% endblock %}

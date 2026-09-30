@@ -61,12 +61,10 @@ class Subject(db.Model):
     __table_args__ = (db.UniqueConstraint('subcategory_id', 'slug'),)
 
     def update_stats(self):
-        published = self.reviews.filter_by(is_published=True).all()
-        self.review_count = len(published)
-        if published:
-            self.avg_rating = sum(r.rating for r in published) / len(published)
-        else:
-            self.avg_rating = 0.0
+        count, average = (db.session.query(db.func.count(Review.id), db.func.avg(Review.rating))
+                          .filter(Review.subject_id == self.id, Review.is_published.is_(True)).one())
+        self.review_count = count
+        self.avg_rating = float(average or 0)
 
     def __repr__(self):
         return f'<Subject {self.name}>'

@@ -132,13 +132,14 @@
           <span class="reply-date">{{ reply.created_at.strftime('%b %d, %Y') }}</span>
         </div>
         <p class="reply-body">{{ reply.body }}</p>
-        <button class="reply-toggle-btn" onclick="toggleReplyForm('reply-form-{{ reply.id }}')">{{ t('ui.reply') }}</button>
+        <button class="reply-toggle-btn" aria-expanded="false" aria-controls="reply-form-{{ reply.id }}" onclick="toggleReplyForm('reply-form-{{ reply.id }}', this)">{{ t('ui.reply') }}</button>
         <form class="reply-form hidden" id="reply-form-{{ reply.id }}"
               action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
               method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="parent_id" value="{{ reply.id }}">
-          <input class="reply-input" type="text" name="author_name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
-          <textarea class="reply-input" name="body" placeholder="{{ t('ui.reply_placeholder') }}" required rows="2" maxlength="2000"></textarea>
+          <input class="reply-input" type="text" name="author_name" aria-label="{{ t('ui.your_name_label') }}" autocomplete="name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
+          <textarea class="reply-input" name="body" aria-label="{{ t('ui.response_placeholder') }}" placeholder="{{ t('ui.reply_placeholder') }}" required rows="2" maxlength="2000"></textarea>
           <button type="submit" class="reply-submit-btn">{{ t('ui.post_reply') }}</button>
         </form>
 
@@ -170,17 +171,20 @@
     <form class="reply-form reply-form--top"
           action="{{ url_for('main.post_reply', category_slug=category.slug, subcategory_slug=subcategory.slug, subject_slug=subject.slug, review_id=review.id) }}"
           method="post">
-      <input class="reply-input" type="text" name="author_name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
-      <textarea class="reply-input" name="body" placeholder="{{ t('ui.response_placeholder') }}" required rows="4" maxlength="2000"></textarea>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="reply-input" type="text" name="author_name" aria-label="{{ t('ui.your_name_label') }}" autocomplete="name" placeholder="{{ t('ui.your_name_placeholder') }}" required maxlength="100">
+      <textarea class="reply-input" name="body" aria-label="{{ t('ui.response_placeholder') }}" placeholder="{{ t('ui.response_placeholder') }}" required rows="4" maxlength="2000"></textarea>
       <button type="submit" class="btn-primary">{{ t('ui.post_response') }}</button>
     </form>
   </div>
 </section>
 
 <script>
-function toggleReplyForm(id) {
+function toggleReplyForm(id, button) {
   var el = document.getElementById(id);
   el.classList.toggle('hidden');
+  button.setAttribute('aria-expanded', !el.classList.contains('hidden'));
+  if (!el.classList.contains('hidden')) el.querySelector('input[name=author_name]').focus();
 }
 </script>
 {% endblock %}

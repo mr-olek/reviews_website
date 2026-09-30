@@ -64,7 +64,20 @@
     "back_to_reviews": "Назад до",
     "review_breadcrumb": "Відгук",
     "no_category": "Категорій ще немає.",
-    "language": "Мова"
+    "language": "Мова",
+    "search": "Пошук",
+    "search_placeholder": "Шукайте породи, авто, їжу та інше…",
+    "search_results": "Результатів для «{query}»: {count}",
+    "no_results": "Нічого не знайдено",
+    "try_another_search": "Спробуйте іншу назву або коротший запит.",
+    "filter_topics": "Фільтрувати за назвою…",
+    "sort_by": "Сортувати за",
+    "sort_name": "Назва А–Я",
+    "sort_reviews": "Найбільше відгуків",
+    "sort_rating": "Найвища оцінка",
+    "apply": "Застосувати",
+    "clear_filters": "Скинути фільтри",
+    "skip_content": "Перейти до вмісту"
   },
   "categories": {
     "animals": {

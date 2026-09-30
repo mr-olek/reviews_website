@@ -7,11 +7,13 @@
 {% if review.image_path %}
 <form id="delete-photo-form" method="POST"
       action="{{ url_for('admin.delete_review_image', review_id=review.id) }}"
-      onsubmit="return confirm('Remove this photo?')"></form>
+      onsubmit="return confirm('Remove this photo?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
 {% endif %}
 
 <div class="edit-card">
   <form method="POST" enctype="multipart/form-data" class="review-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-group">
       <label class="form-label">Status</label>
       <label class="toggle-label">
@@ -78,6 +80,7 @@
     </dl>
     <form method="POST" action="{{ url_for('admin.delete_review', review_id=review.id) }}"
           onsubmit="return confirm('Permanently delete this review?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn-sm btn-danger" style="margin-top:16px;width:100%">Delete review</button>
     </form>
   </div>
