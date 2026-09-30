@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_caching import Cache
 from config import config
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 db = SQLAlchemy()
 cache = Cache()
@@ -10,6 +11,9 @@ cache = Cache()
 def create_app(config_name='default'):
     app = Flask(__name__, template_folder='templates', static_folder='../static')
     app.config.from_object(config[config_name])
+    # Azure terminates TLS before forwarding requests to Gunicorn.
+    if app.config.get('TRUST_PROXY_HEADERS'):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
 
     db.init_app(app)
     cache.init_app(app)
@@ -63,41 +67,25 @@ def _ensure_persistent_db(app):
 
 
 def _migrate(db):
-    """Add any missing columns to existing tables (SQLite-safe)."""
-    from sqlalchemy import text
-    migrations = [
-        "ALTER TABLE categories ADD COLUMN image_path VARCHAR(500)",
-        "ALTER TABLE subcategories ADD COLUMN image_path VARCHAR(500)",
-        "ALTER TABLE subcategories ADD COLUMN description TEXT",
-        "ALTER TABLE subcategories ADD COLUMN pros TEXT",
-        "ALTER TABLE subcategories ADD COLUMN cons TEXT",
-        "ALTER TABLE subjects ADD COLUMN pros TEXT",
-        "ALTER TABLE subjects ADD COLUMN cons TEXT",
-        """CREATE TABLE IF NOT EXISTS review_replies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            review_id INTEGER NOT NULL REFERENCES reviews(id),
-            parent_id INTEGER REFERENCES review_replies(id),
-            author_name VARCHAR(200) NOT NULL,
-            body TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )""",
-        "ALTER TABLE reviews ADD COLUMN translations TEXT",
-        "ALTER TABLE subjects ADD COLUMN translations TEXT",
-        "ALTER TABLE subcategories ADD COLUMN translations TEXT",
-        "ALTER TABLE categories ADD COLUMN translations TEXT",
-        "CREATE INDEX IF NOT EXISTS ix_reviews_subject_id ON reviews (subject_id)",
-        "CREATE INDEX IF NOT EXISTS ix_reviews_is_published ON reviews (is_published)",
-        "CREATE INDEX IF NOT EXISTS ix_reviews_created_at ON reviews (created_at)",
-        "ALTER TABLE page_views ADD COLUMN country VARCHAR(2)",
-        "ALTER TABLE page_views ADD COLUMN device_type VARCHAR(10)",
-    ]
-    with db.engine.connect() as conn:
-        for sql in migrations:
-            try:
-                conn.execute(text(sql))
-                conn.commit()
-            except Exception:
-                pass  # column already exists
+    """Add legacy columns only when missing; support SQLite and PostgreSQL."""
+    from sqlalchemy import inspect, text
+    columns = {
+        'categories': {'image_path': 'VARCHAR(500)', 'translations': 'TEXT'},
+        'subcategories': {'image_path': 'VARCHAR(500)', 'description': 'TEXT',
+                          'pros': 'TEXT', 'cons': 'TEXT', 'translations': 'TEXT'},
+        'subjects': {'pros': 'TEXT', 'cons': 'TEXT', 'translations': 'TEXT'},
+        'reviews': {'translations': 'TEXT'},
+        'page_views': {'country': 'VARCHAR(2)', 'device_type': 'VARCHAR(10)'},
+    }
+    with db.engine.begin() as conn:
+        inspector = inspect(conn)
+        for table, additions in columns.items():
+            existing = {column['name'] for column in inspector.get_columns(table)}
+            for column, sql_type in additions.items():
+                if column not in existing:
+                    conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {sql_type}'))
+        for column in ('subject_id', 'is_published', 'created_at'):
+            conn.execute(text(f'CREATE INDEX IF NOT EXISTS ix_reviews_{column} ON reviews ({column})'))
 
 
 def _start_scheduler(app):

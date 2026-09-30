@@ -17,4 +17,6 @@ ln -sfn /home/uploads static/images/uploads
 if [ ! -f /home/reviews.db ]; then
     cp instance/reviews.db /home/reviews.db
 fi
-exec gunicorn --bind=0.0.0.0:8000 --timeout=120 --workers=3 'app:create_app("production")'
+# Avoid competing SQLite writers on the shared filesystem. Managed databases
+# can use multiple workers by setting WEB_CONCURRENCY.
+exec gunicorn --bind=0.0.0.0:8000 --timeout=120 --workers="${WEB_CONCURRENCY:-1}" 'app:create_app("production")'

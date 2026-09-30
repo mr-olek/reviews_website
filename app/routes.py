@@ -163,7 +163,11 @@ def track_visit():
         ip_address=request.remote_addr,
         device_type=_detect_device(ua),
     ))
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.warning('Visit tracking failed; continuing the request', exc_info=True)
 
 
 # ---------------------------------------------------------------------------

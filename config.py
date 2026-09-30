@@ -8,6 +8,11 @@ class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///reviews.db')
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {'connect_args': {'timeout': 30}}
+        if DATABASE_URL.startswith('sqlite:') else {'pool_pre_ping': True}
+    )
+    TRUST_PROXY_HEADERS = bool(os.environ.get('WEBSITE_HOSTNAME'))
 
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
     CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-4-6')
